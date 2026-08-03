@@ -16,13 +16,13 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://guava-campo.netlify
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Guava Campo | Sindicato Rural de São José dos Campos",
+  title: "Cursos SENAR | Sindicato Rural de São José dos Campos",
   description:
-    "Plataforma de gestão de cursos SENAR para sindicatos rurais, com inscrições, frequência, WhatsApp e certificados.",
+    "Cursos SENAR mobilizados pelo Sindicato Rural de São José dos Campos, com pré-inscrição online para produtores e trabalhadores rurais.",
   openGraph: {
-    title: "Guava Campo",
+    title: "Cursos SENAR em São José dos Campos",
     description:
-      "Portal do aluno e painel de gestão SENAR para o Sindicato Rural de São José dos Campos.",
+      "Pré-inscrição online para cursos mobilizados pelo Sindicato Rural de São José dos Campos.",
     images: [
       {
         url: "/og.svg",
@@ -34,14 +34,14 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Guava Campo",
+    title: "Cursos SENAR em São José dos Campos",
     description:
-      "Cursos SENAR, inscrições, frequência e certificados para sindicatos rurais.",
+      "Pré-inscrição online para cursos mobilizados pelo Sindicato Rural de São José dos Campos.",
     images: ["/og.svg"],
   },
   icons: {
-    icon: "/sindicato-sjc.svg",
-    apple: "/sindicato-sjc.svg",
+    icon: "/sindicato-sjc.png",
+    apple: "/sindicato-sjc.png",
   },
 };
 
