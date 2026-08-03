@@ -1,0 +1,32 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "inscricoes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sindicatoId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "prioridade", "order": "ASCENDING" },
+        { "fieldPath": "dataInscricao", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "turmas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sindicatoId", "order": "ASCENDING" },
+        { "fieldPath": "publicadaNoPortal", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "alunos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sindicatoId", "order": "ASCENDING" },
+        { "fieldPath": "cpf", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
