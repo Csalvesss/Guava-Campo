@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-labelledby="title desc">
+  <title id="title">SENAR São Paulo</title>
+  <desc id="desc">Marca SENAR São Paulo simplificada para o Guava Campo.</desc>
+  <rect width="320" height="320" rx="32" fill="#ffffff"/>
+  <g transform="translate(46 20)">
+    <path d="M20 116C34 54 73 18 124 5v188H92V69c-18 15-31 35-39 62l-33-15Z" fill="#5bb65b"/>
+    <path d="M66 139C78 74 121 31 184 13v201h-35V82c-21 17-38 42-47 72l-36-15Z" fill="#0b7c49"/>
+    <path d="M111 162c12-65 55-108 118-126v55c-31 16-54 45-65 86l-53-15Z" fill="#006b50"/>
+  </g>
+  <text x="160" y="246" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="800" fill="#087a3d">SENAR</text>
+  <text x="160" y="281" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="800" fill="#087a3d">SÃO PAULO</text>
+</svg>

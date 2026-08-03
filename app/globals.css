@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7faf8;
+  --foreground: #10231b;
+  --muted: #5e6d65;
+  --line: #dbe8df;
+  --primary: #087a3d;
+  --primary-dark: #045f31;
+  --teal: #0b6f67;
+  --blue: #1769aa;
+  --gold: #c98617;
+  --danger: #b13d2f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    linear-gradient(180deg, rgba(232, 245, 238, 0.9) 0%, rgba(247, 250, 248, 0) 340px),
+    var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(23, 105, 170, 0.35);
+  outline-offset: 2px;
+}
+
+.surface {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 30px rgba(16, 35, 27, 0.08);
+}
+
+.tight-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+@media (max-width: 760px) {
+  body {
+    background:
+      linear-gradient(180deg, rgba(232, 245, 238, 0.95) 0%, rgba(247, 250, 248, 0) 520px),
+      var(--background);
+  }
+}

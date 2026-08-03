@@ -1,0 +1,74 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function role() {
+      return signedIn() ? request.auth.token.role : null;
+    }
+
+    function tenant() {
+      return signedIn() ? request.auth.token.sindicatoId : null;
+    }
+
+    function isSuperAdmin() {
+      return role() == "super_admin";
+    }
+
+    function isTenantStaff() {
+      return role() in ["admin_sindicato", "mobilizador", "instrutor"];
+    }
+
+    function sameTenant(data) {
+      return isSuperAdmin() || (signedIn() && data.sindicatoId == tenant());
+    }
+
+    match /sindicatos/{sindicatoId} {
+      allow read: if resource.data.assinaturaAtiva == true || isSuperAdmin() || tenant() == sindicatoId;
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    match /alunos/{alunoId} {
+      allow read: if sameTenant(resource.data);
+      allow create: if signedIn() && request.resource.data.sindicatoId == tenant();
+      allow update: if sameTenant(resource.data) && request.resource.data.sindicatoId == resource.data.sindicatoId;
+      allow delete: if isSuperAdmin() || (isTenantStaff() && sameTenant(resource.data));
+    }
+
+    match /cursos/{cursoId} {
+      allow read: if resource.data.ativo == true || sameTenant(resource.data);
+      allow create: if isSuperAdmin() || (isTenantStaff() && request.resource.data.sindicatoId == tenant());
+      allow update, delete: if isSuperAdmin() || (isTenantStaff() && sameTenant(resource.data));
+    }
+
+    match /instrutores/{instrutorId} {
+      allow read: if sameTenant(resource.data);
+      allow create: if isSuperAdmin() || (isTenantStaff() && request.resource.data.sindicatoId == tenant());
+      allow update, delete: if isSuperAdmin() || (isTenantStaff() && sameTenant(resource.data));
+    }
+
+    match /turmas/{turmaId} {
+      allow read: if resource.data.publicadaNoPortal == true || sameTenant(resource.data);
+      allow create: if isSuperAdmin() || (isTenantStaff() && request.resource.data.sindicatoId == tenant());
+      allow update, delete: if isSuperAdmin() || (isTenantStaff() && sameTenant(resource.data));
+    }
+
+    match /inscricoes/{inscricaoId} {
+      allow read: if sameTenant(resource.data);
+      allow create: if signedIn()
+        && request.resource.data.sindicatoId == tenant()
+        && request.resource.data.prioridade in [1, 2, 3, 4]
+        && request.resource.data.status in ["pendente", "lista_espera"];
+      allow update: if sameTenant(resource.data)
+        && request.resource.data.sindicatoId == resource.data.sindicatoId
+        && (
+          isTenantStaff()
+          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status"])
+        );
+      allow delete: if isSuperAdmin() || (isTenantStaff() && sameTenant(resource.data));
+    }
+  }
+}
