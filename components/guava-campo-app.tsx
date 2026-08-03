@@ -1,26 +1,31 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   BadgeCheck,
+  Building2,
   CalendarDays,
   CheckCircle2,
   ClipboardCheck,
+  ClipboardList,
   Clock,
   FileCheck2,
   GraduationCap,
+  KeyRound,
+  LayoutDashboard,
   LockKeyhole,
   MapPin,
   MessageCircle,
   Phone,
   Search,
   ShieldCheck,
+  UserCheck,
   UserRound,
   UsersRound,
 } from "lucide-react";
-import { getEnrollmentBlock, prioridadePorCategoria, turmaTemVaga } from "@/lib/business-rules";
-import { alunos, cursos, inscricoes, sindicato, turmas } from "@/lib/seed";
+import { prioridadePorCategoria, turmaTemVaga } from "@/lib/business-rules";
+import { cursos, inscricoes, sindicato, turmas } from "@/lib/seed";
 import { categoriaLabels, type CategoriaAluno } from "@/lib/types";
 
 type FormState = {
@@ -30,12 +35,68 @@ type FormState = {
   categoria: CategoriaAluno;
 };
 
+type AccessType = "aluno" | "sindicato";
+
 const initialForm: FormState = {
   nome: "",
   cpf: "",
   telefone: "",
   categoria: "produtor",
 };
+
+const accessDetails = {
+  aluno: {
+    eyebrow: "Área do aluno",
+    title: "Consulte sua inscrição e seus certificados.",
+    description:
+      "Acesso para o participante acompanhar pedidos, confirmações, grupos de turma e certificados emitidos.",
+    userLabel: "CPF",
+    userPlaceholder: "000.000.000-00",
+    passwordLabel: "Data de nascimento",
+    passwordPlaceholder: "dd/mm/aaaa",
+    button: "Entrar na área do aluno",
+    features: [
+      { icon: ClipboardCheck, title: "Inscrições", text: "Status do pedido e posição na fila." },
+      { icon: MessageCircle, title: "Grupos", text: "WhatsApp liberado após confirmação." },
+      { icon: BadgeCheck, title: "Certificados", text: "Documentos disponíveis para baixar." },
+      { icon: UserCheck, title: "Dados", text: "Atualização de contato e categoria." },
+    ],
+  },
+  sindicato: {
+    eyebrow: "Área do sindicato",
+    title: "Gerencie turmas, inscrições e presença.",
+    description:
+      "Acesso restrito para a equipe do sindicato rural organizar mobilização, aprovar vagas e acompanhar cursos.",
+    userLabel: "E-mail institucional",
+    userPlaceholder: "contato@sindicatorural.com.br",
+    passwordLabel: "Senha",
+    passwordPlaceholder: "Digite sua senha",
+    button: "Entrar na área do sindicato",
+    features: [
+      { icon: ClipboardList, title: "Pré-inscrições", text: "Fila por prioridade e documentação." },
+      { icon: LayoutDashboard, title: "Turmas", text: "Agenda, vagas e status operacional." },
+      { icon: UsersRound, title: "Frequência", text: "Lista de presença e aprovação." },
+      { icon: FileCheck2, title: "Certificados", text: "Liberação e histórico dos alunos." },
+    ],
+  },
+} satisfies Record<
+  AccessType,
+  {
+    eyebrow: string;
+    title: string;
+    description: string;
+    userLabel: string;
+    userPlaceholder: string;
+    passwordLabel: string;
+    passwordPlaceholder: string;
+    button: string;
+    features: {
+      icon: typeof ClipboardCheck;
+      title: string;
+      text: string;
+    }[];
+  }
+>;
 
 function formatShortDate(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -60,28 +121,14 @@ function getTurmaForCourse(courseId: string) {
 
 export function GuavaCampoApp() {
   const [selectedCourseId, setSelectedCourseId] = useState(cursos[0].id);
+  const [accessType, setAccessType] = useState<AccessType>("aluno");
   const [form, setForm] = useState<FormState>(initialForm);
   const [submitted, setSubmitted] = useState(false);
 
   const selectedCourse = cursos.find((curso) => curso.id === selectedCourseId) ?? cursos[0];
   const selectedTurma = getTurmaForCourse(selectedCourse.id);
-  const alunoDemo = alunos[0];
-  const enrollmentBlock = getEnrollmentBlock(alunoDemo, selectedCourse, inscricoes);
   const hasSeat = turmaTemVaga(selectedTurma, inscricoes);
-
-  const stats = useMemo(() => {
-    const turmasPublicadas = turmas.filter((turma) => turma.publicadaNoPortal).length;
-    const vagas = turmas.reduce(
-      (total, turma) => total + Math.max(turma.capacidade - turma.vagasPreenchidas, 0),
-      0,
-    );
-
-    return [
-      { label: "Cursos disponíveis", value: cursos.filter((curso) => curso.ativo).length },
-      { label: "Turmas abertas", value: turmasPublicadas },
-      { label: "Vagas em mobilização", value: vagas },
-    ];
-  }, []);
+  const activeAccess = accessDetails[accessType];
 
   function updateField<Key extends keyof FormState>(key: Key, value: FormState[Key]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -106,9 +153,9 @@ export function GuavaCampoApp() {
           </div>
         </div>
 
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <a href="#" className="flex min-w-0 items-center gap-4" aria-label="Início">
-            <div className="flex size-20 shrink-0 items-center justify-center rounded-md border border-[#d7e5db] bg-white p-2 shadow-sm sm:size-24">
+            <div className="flex size-16 shrink-0 items-center justify-center rounded-md border border-[#d7e5db] bg-white p-2 shadow-sm sm:size-24">
               <Image
                 src="/sindicato-sjc.png"
                 alt={sindicato.nome}
@@ -122,32 +169,45 @@ export function GuavaCampoApp() {
               <p className="text-sm font-extrabold uppercase text-[var(--primary)]">
                 Sindicato Rural
               </p>
-              <p className="text-2xl font-black leading-tight tracking-normal text-[var(--foreground)]">
+              <p className="whitespace-nowrap text-xl font-black leading-tight tracking-normal text-[var(--foreground)] xl:text-2xl">
                 São José dos Campos
               </p>
             </div>
           </a>
 
-          <nav className="hidden items-center gap-8 text-sm font-bold text-[#4b6256] lg:flex">
-            <a href="#cursos" className="transition hover:text-[var(--primary)]">
+          <nav className="hidden items-center gap-6 text-sm font-bold text-[#4b6256] lg:flex xl:gap-8">
+            <a href="#cursos" className="whitespace-nowrap transition hover:text-[var(--primary)]">
               Cursos
             </a>
-            <a href="#inscricao" className="transition hover:text-[var(--primary)]">
+            <a href="#inscricao" className="whitespace-nowrap transition hover:text-[var(--primary)]">
               Inscrição
             </a>
-            <a href="#como-funciona" className="transition hover:text-[var(--primary)]">
+            <a href="#acessos" className="whitespace-nowrap transition hover:text-[var(--primary)]">
+              Acessos
+            </a>
+            <a href="#como-funciona" className="whitespace-nowrap transition hover:text-[var(--primary)]">
               Como funciona
             </a>
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap sm:justify-end sm:gap-3">
             <a
-              href="#area-aluno"
+              href="#acessos"
+              onClick={() => setAccessType("aluno")}
               className="inline-flex items-center justify-center gap-2 rounded-md border border-[var(--primary)] bg-white px-3 py-2.5 text-sm font-extrabold text-[var(--primary)] transition hover:bg-[#edf8f1] sm:px-4"
             >
               <UserRound className="size-4" aria-hidden />
-              <span className="hidden sm:inline">Área do aluno</span>
-              <span className="sm:hidden">Aluno</span>
+              <span className="hidden 2xl:inline">Área do aluno</span>
+              <span className="2xl:hidden">Aluno</span>
+            </a>
+            <a
+              href="#acessos"
+              onClick={() => setAccessType("sindicato")}
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-[var(--primary)] bg-white px-3 py-2.5 text-sm font-extrabold text-[var(--primary)] transition hover:bg-[#edf8f1] sm:px-4"
+            >
+              <Building2 className="size-4" aria-hidden />
+              <span className="hidden 2xl:inline">Área do sindicato</span>
+              <span className="2xl:hidden">Sindicato</span>
             </a>
             <a
               href="#inscricao"
@@ -194,7 +254,8 @@ export function GuavaCampoApp() {
                 Ver cursos disponíveis
               </a>
               <a
-                href="#area-aluno"
+                href="#acessos"
+                onClick={() => setAccessType("aluno")}
                 className="inline-flex items-center justify-center gap-2 rounded-md border border-white/35 bg-white/10 px-5 py-3 text-base font-bold text-white backdrop-blur transition hover:bg-white/18"
               >
                 <UserRound className="size-5" aria-hidden />
@@ -244,17 +305,6 @@ export function GuavaCampoApp() {
             </a>
           </aside>
         </div>
-      </section>
-
-      <section className="mx-auto -mt-8 grid max-w-7xl gap-3 px-4 sm:px-6 md:grid-cols-3 lg:px-8">
-        {stats.map((stat) => (
-          <div key={stat.label} className="rounded-md border border-[#dce8df] bg-white p-5 shadow-sm">
-            <p className="text-sm font-semibold text-[#607369]">{stat.label}</p>
-            <strong className="mt-2 block text-4xl font-black text-[var(--primary-dark)]">
-              {stat.value}
-            </strong>
-          </div>
-        ))}
       </section>
 
       <section id="cursos" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -346,6 +396,110 @@ export function GuavaCampoApp() {
         </div>
       </section>
 
+      <section id="acessos" className="border-y border-[#dce8df] bg-white py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-5 lg:grid-cols-[0.85fr_1fr] lg:items-end">
+            <div>
+              <p className="text-sm font-extrabold uppercase text-[var(--primary)]">
+                Acessos do portal
+              </p>
+              <h2 className="mt-2 max-w-3xl text-3xl font-black tracking-normal sm:text-5xl">
+                Duas áreas separadas para aluno e sindicato rural
+              </h2>
+            </div>
+            <p className="max-w-2xl text-base leading-7 text-[#607369]">
+              O aluno acompanha a própria inscrição. A equipe do sindicato entra em uma
+              área restrita para organizar turmas, confirmar vagas e registrar frequência.
+            </p>
+          </div>
+
+          <div className="mt-9 grid gap-6 lg:grid-cols-[420px_1fr]">
+            <form
+              onSubmit={(event) => event.preventDefault()}
+              className="rounded-md border border-[#dce8df] bg-[#f7faf8] p-5 shadow-lg shadow-[#153a250c]"
+            >
+              <div
+                className="grid grid-cols-2 gap-1 rounded-md bg-[#e8f2ec] p-1"
+                role="tablist"
+                aria-label="Tipo de acesso"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  onClick={() => setAccessType("aluno")}
+                  aria-selected={accessType === "aluno"}
+                  className={`inline-flex items-center justify-center gap-2 rounded-md px-3 py-3 text-sm font-black transition ${
+                    accessType === "aluno"
+                      ? "bg-white text-[var(--primary-dark)] shadow-sm"
+                      : "text-[#607369] hover:text-[var(--primary)]"
+                  }`}
+                >
+                  <UserRound className="size-4" aria-hidden />
+                  Aluno
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  onClick={() => setAccessType("sindicato")}
+                  aria-selected={accessType === "sindicato"}
+                  className={`inline-flex items-center justify-center gap-2 rounded-md px-3 py-3 text-sm font-black transition ${
+                    accessType === "sindicato"
+                      ? "bg-white text-[var(--primary-dark)] shadow-sm"
+                      : "text-[#607369] hover:text-[var(--primary)]"
+                  }`}
+                >
+                  <Building2 className="size-4" aria-hidden />
+                  Sindicato
+                </button>
+              </div>
+
+              <div className="mt-6">
+                <p className="text-sm font-extrabold uppercase text-[var(--primary)]">
+                  {activeAccess.eyebrow}
+                </p>
+                <h3 className="mt-2 text-2xl font-black tracking-normal">{activeAccess.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-[#607369]">
+                  {activeAccess.description}
+                </p>
+              </div>
+
+              <div className="mt-6 grid gap-4">
+                <Field label={activeAccess.userLabel} icon={accessType === "aluno" ? ShieldCheck : UserRound}>
+                  <input
+                    className="field-input"
+                    placeholder={activeAccess.userPlaceholder}
+                    type={accessType === "aluno" ? "text" : "email"}
+                  />
+                </Field>
+                <Field label={activeAccess.passwordLabel} icon={KeyRound}>
+                  <input
+                    className="field-input"
+                    placeholder={activeAccess.passwordPlaceholder}
+                    type={accessType === "aluno" ? "text" : "password"}
+                  />
+                </Field>
+              </div>
+
+              <button
+                type="submit"
+                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-md bg-[var(--primary)] px-5 py-3.5 text-base font-black text-white transition hover:bg-[var(--primary-dark)]"
+              >
+                <LockKeyhole className="size-5" aria-hidden />
+                {activeAccess.button}
+              </button>
+            </form>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {activeAccess.features.map((feature) => (
+                <AccessFeature key={feature.title} icon={feature.icon} title={feature.title}>
+                  {feature.text}
+                </AccessFeature>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="inscricao" className="bg-white py-16">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(390px,0.62fr)] lg:px-8">
           <div>
@@ -371,11 +525,6 @@ export function GuavaCampoApp() {
                   Prioridade {prioridadePorCategoria(form.categoria)}
                 </span>
               </div>
-              {enrollmentBlock ? (
-                <div className="mt-5 rounded-md border border-[#ead7a7] bg-[#fff8e8] p-4 text-sm font-semibold text-[#80550b]">
-                  Regra ativa: {enrollmentBlock}
-                </div>
-              ) : null}
             </div>
 
             <div id="como-funciona" className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -466,29 +615,6 @@ export function GuavaCampoApp() {
         </div>
       </section>
 
-      <section id="area-aluno" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid gap-5 rounded-md border border-[#dce8df] bg-[#0c3d28] p-6 text-white md:grid-cols-[1fr_auto] md:items-center md:p-8">
-          <div>
-            <p className="text-sm font-extrabold uppercase text-[#b9e6c9]">
-              Área do aluno
-            </p>
-            <h2 className="mt-2 text-3xl font-black tracking-normal">
-              Acompanhe suas inscrições, grupos e certificados.
-            </h2>
-            <p className="mt-2 max-w-2xl text-white/78">
-              O acesso do aluno será usado para consultar o histórico por CPF, visualizar
-              confirmações e baixar certificados liberados.
-            </p>
-          </div>
-          <a
-            href="#inscricao"
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-white px-5 py-3 text-base font-black text-[var(--primary-dark)] transition hover:bg-[#eff8f2]"
-          >
-            <LockKeyhole className="size-5" aria-hidden />
-            Entrar como aluno
-          </a>
-        </div>
-      </section>
     </main>
   );
 }
@@ -525,6 +651,26 @@ function Step({
   return (
     <div className="rounded-md border border-[#dce8df] bg-white p-5">
       <Icon className="size-7 text-[var(--primary)]" aria-hidden />
+      <h3 className="mt-4 text-lg font-black">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-[#607369]">{children}</p>
+    </div>
+  );
+}
+
+function AccessFeature({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: typeof ClipboardCheck;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-md border border-[#dce8df] bg-[#f7faf8] p-5">
+      <div className="flex size-11 items-center justify-center rounded-md bg-white text-[var(--primary)] shadow-sm">
+        <Icon className="size-5" aria-hidden />
+      </div>
       <h3 className="mt-4 text-lg font-black">{title}</h3>
       <p className="mt-2 text-sm leading-6 text-[#607369]">{children}</p>
     </div>
