@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SindicatoDashboard } from "@/components/sindicato/sindicato-dashboard";
+import { StoreProvider } from "@/lib/store";
 
 export const metadata: Metadata = {
   title: "Área do sindicato",
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function SindicatoPage() {
-  return <SindicatoDashboard />;
+  return (
+    <StoreProvider>
+      <SindicatoDashboard />
+    </StoreProvider>
+  );
 }

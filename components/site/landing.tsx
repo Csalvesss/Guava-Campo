@@ -12,10 +12,6 @@ import {
   ChevronDown,
   Clock,
   ClipboardCheck,
-  FileBarChart,
-  Fingerprint,
-  LayoutDashboard,
-  ListChecks,
   MapPin,
   MessageCircle,
   Phone,
@@ -37,25 +33,8 @@ import {
   vagasRestantes,
 } from "@/lib/catalog";
 import { cursos, inscricoes } from "@/lib/seed";
-import {
-  contato,
-  depoimentos,
-  diferenciais,
-  eixos,
-  faq,
-  numeros,
-  passos,
-} from "@/lib/site-content";
+import { contato, depoimentos, eixos, faq, numeros, passos } from "@/lib/site-content";
 import { categoriaLabels, type CategoriaAluno } from "@/lib/types";
-
-const diferencialIcons: Record<string, LucideIcon> = {
-  list: ListChecks,
-  lock: Fingerprint,
-  message: MessageCircle,
-  badge: BadgeCheck,
-  dashboard: LayoutDashboard,
-  report: FileBarChart,
-};
 
 const passoIcons: Record<string, LucideIcon> = {
   search: Search,
@@ -374,41 +353,6 @@ export function Landing() {
               <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">{eixo.descricao}</p>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* ============ DIFERENCIAIS ============ */}
-      <section className="contour-bg border-y border-line bg-paper-2">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
-            <div>
-              <span className="eyebrow">O portal do sindicato</span>
-              <h2 className="mt-3 font-display text-4xl font-semibold text-pine sm:text-5xl">
-                Mais do que um site: uma ferramenta de mobilização
-              </h2>
-            </div>
-            <p className="text-base leading-relaxed text-ink-soft">
-              Cada detalhe foi pensado para o dia a dia do sindicato rural e para a realidade de
-              quem vive no campo — do primeiro clique da pré-inscrição à prestação de contas ao SENAR.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {diferenciais.map((d) => {
-              const Icon = diferencialIcons[d.icon] ?? ListChecks;
-              return (
-                <div key={d.titulo} className="card flex gap-4 p-6">
-                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-harvest/15 text-harvest-deep">
-                    <Icon className="size-5" aria-hidden />
-                  </span>
-                  <div>
-                    <h3 className="font-display text-lg font-semibold text-pine">{d.titulo}</h3>
-                    <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">{d.texto}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </div>
       </section>
 
