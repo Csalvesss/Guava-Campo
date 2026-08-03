@@ -135,7 +135,7 @@ export function DashboardShell({
             <button
               type="button"
               onClick={() => setDrawer(true)}
-              className="grid size-10 shrink-0 place-items-center rounded-xl border border-line bg-cream text-forest lg:hidden"
+              className="grid size-10 shrink-0 place-items-center rounded-xl bg-cream text-forest shadow-[var(--shadow-soft)] lg:hidden"
               aria-label="Abrir menu"
             >
               <Menu className="size-5" />

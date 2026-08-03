@@ -17,7 +17,7 @@ export function Brand({
   const inner = (
     <span className="flex items-center gap-3">
       <span
-        className={`grid ${box} shrink-0 place-items-center overflow-hidden rounded-xl bg-white p-1 ring-1 ring-black/5`}
+        className={`grid ${box} shrink-0 place-items-center overflow-hidden rounded-xl bg-white p-1`}
       >
         <Image
           src="/sindicato-sjc.png"

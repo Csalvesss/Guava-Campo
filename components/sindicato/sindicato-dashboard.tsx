@@ -81,7 +81,7 @@ const titles: Record<string, { title: string; subtitle: string }> = {
   turmas: { title: "Turmas", subtitle: "Crie, edite e acompanhe a agenda das capacitações." },
   alunos: { title: "Alunos", subtitle: "Base de produtores e importação do SENAR." },
   certificados: { title: "Frequência e certificados", subtitle: "Registre presença e emita certificados." },
-  relatorios: { title: "Relatórios", subtitle: "Exportações para a prestação de contas ao SENAR-SP." },
+  relatorios: { title: "Prestação de contas", subtitle: "Consolidado por turma, exportações e integração com o SENAR-SP." },
 };
 
 export function SindicatoDashboard() {
@@ -105,7 +105,7 @@ export function SindicatoDashboard() {
     { id: "turmas", label: "Turmas", icon: CalendarDays },
     { id: "alunos", label: "Alunos", icon: Users },
     { id: "certificados", label: "Certificados", icon: BadgeCheck },
-    { id: "relatorios", label: "Relatórios", icon: FileBarChart },
+    { id: "relatorios", label: "Prestação de contas", icon: FileBarChart },
   ];
 
   const meta = titles[active];
@@ -214,7 +214,7 @@ function Painel({ resumo, onNavigate }: { resumo: Resumo; onNavigate: (id: strin
               {fila.slice(0, 5).map((insc, i) => {
                 const turma = turmas.find((t) => t.id === insc.turmaId);
                 return (
-                  <div key={insc.id} className="flex items-center gap-3 rounded-xl border border-line bg-paper px-3 py-2.5">
+                  <div key={insc.id} className="flex items-center gap-3 rounded-xl bg-paper-2 px-3 py-2.5">
                     <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-forest/8 font-display text-sm font-semibold text-forest">{i + 1}</span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-pine">{insc.alunoNome}</p>
@@ -237,7 +237,7 @@ function Painel({ resumo, onNavigate }: { resumo: Resumo; onNavigate: (id: strin
             {proximas.slice(0, 3).map((turma) => {
               const ocupacao = Math.round((turma.vagasPreenchidas / turma.capacidade) * 100);
               return (
-                <div key={turma.id} className="rounded-xl border border-line bg-paper p-4">
+                <div key={turma.id} className="rounded-xl bg-paper-2 p-4">
                   <div className="flex items-center justify-between gap-2">
                     <TurmaBadge status={turma.status} />
                     <span className="text-xs text-ink-soft">{turma.encontros[0] ? formatShortDate(turma.encontros[0].data) : "—"}</span>
@@ -261,7 +261,7 @@ function Painel({ resumo, onNavigate }: { resumo: Resumo; onNavigate: (id: strin
           {diferenciais.map((d) => {
             const Icon = diferencialIcons[d.icon] ?? Info;
             return (
-              <div key={d.titulo} className="flex gap-3 rounded-xl border border-line bg-paper p-4">
+              <div key={d.titulo} className="flex gap-3 rounded-xl bg-paper-2 p-4">
                 <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-harvest/15 text-harvest-deep"><Icon className="size-5" aria-hidden /></span>
                 <div>
                   <p className="font-semibold text-pine">{d.titulo}</p>
@@ -331,7 +331,7 @@ function Fila() {
                       <select
                         value={insc.status}
                         onChange={(e) => setInscricaoStatus(insc.id, e.target.value as InscricaoStatus)}
-                        className="rounded-lg border border-line bg-white px-2 py-1.5 text-xs font-semibold text-pine"
+                        className="rounded-lg bg-paper-2 px-2 py-1.5 text-xs font-semibold text-pine"
                         aria-label={`Editar status de ${insc.alunoNome}`}
                       >
                         {(Object.keys(inscricaoStatusLabels) as InscricaoStatus[]).map((s) => (
@@ -342,7 +342,7 @@ function Fila() {
                     <td className="px-5 py-3">
                       <div className="flex justify-end gap-1.5">
                         <button type="button" onClick={() => setInscricaoStatus(insc.id, "confirmada")} className="rounded-lg bg-forest px-2.5 py-1.5 text-xs font-bold text-cream hover:bg-pine">Confirmar</button>
-                        <button type="button" onClick={() => setInscricaoStatus(insc.id, "lista_espera")} className="rounded-lg border border-line px-2.5 py-1.5 text-xs font-bold text-ink-soft hover:bg-paper-2">Espera</button>
+                        <button type="button" onClick={() => setInscricaoStatus(insc.id, "lista_espera")} className="rounded-lg bg-paper-2 px-2.5 py-1.5 text-xs font-bold text-ink-soft hover:bg-mist/50">Espera</button>
                       </div>
                     </td>
                   </tr>
@@ -385,15 +385,25 @@ function Turmas({ onNew, onEdit }: { onNew: () => void; onEdit: (t: Turma) => vo
                   <div className="flex flex-wrap items-center gap-2">
                     <TurmaBadge status={turma.status} />
                     {curso ? <span className="chip bg-paper-2 text-ink-soft">{cursoTipoCurto[curso.tipo]}</span> : null}
+                    {turma.confirmacaoAutomatica ? (
+                      <span className="chip bg-leaf/15 text-forest">Entrada direta</span>
+                    ) : (
+                      <span className="chip bg-harvest/15 text-harvest-deep">Fila por prioridade</span>
+                    )}
                     {turma.numeroOficio ? <span className="chip bg-paper-2 text-ink-soft">Ofício {turma.numeroOficio}</span> : null}
                   </div>
                   <h3 className="mt-2 font-display text-xl font-semibold text-pine">{turma.cursoNome}</h3>
                   <div className="mt-2 grid gap-x-6 gap-y-1.5 text-sm text-ink-soft sm:grid-cols-2">
                     <p className="flex items-center gap-2"><CalendarDays className="size-4 text-forest" aria-hidden /> {turma.encontros.length ? `${periodoTurma(turma)} · ${turma.encontros.length} encontros` : "Sem datas"}</p>
-                    <p className="flex items-center gap-2"><MapPin className="size-4 text-forest" aria-hidden /> {turma.local}</p>
+                    <p className="flex items-center gap-2"><MapPin className="size-4 text-forest" aria-hidden /> {turma.endereco || turma.local}</p>
                     <p className="flex items-center gap-2"><GraduationCap className="size-4 text-forest" aria-hidden /> {turma.instrutorNome ?? "Instrutor a definir"}</p>
                     <p className="flex items-center gap-2"><ShieldCheck className="size-4 text-forest" aria-hidden /> {turma.supervisorSenar ? turma.supervisorSenar.nome : "Supervisor a definir"}</p>
                   </div>
+                  {turma.mapsUrl ? (
+                    <a href={turma.mapsUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-forest hover:underline">
+                      <MapPin className="size-4" aria-hidden /> Ver no mapa
+                    </a>
+                  ) : null}
                 </div>
 
                 <div className="w-full shrink-0 rounded-xl bg-paper p-4 lg:w-72">
@@ -405,7 +415,7 @@ function Turmas({ onNew, onEdit }: { onNew: () => void; onEdit: (t: Turma) => vo
                     <button
                       type="button"
                       onClick={() => { if (confirm(`Excluir a turma “${turma.cursoNome}”? Esta ação não pode ser desfeita.`)) deleteTurma(turma.id); }}
-                      className="btn flex-1 !py-1.5 text-xs text-guava ring-1 ring-guava/30 hover:bg-guava/8"
+                      className="btn flex-1 !py-1.5 text-xs text-guava bg-guava/10 hover:bg-guava/18"
                     >
                       <Trash2 className="size-3.5" aria-hidden /> Excluir
                     </button>
@@ -489,7 +499,7 @@ function Alunos() {
       </div>
 
       {importInfo ? (
-        <div className="flex items-start gap-3 rounded-xl border border-leaf/30 bg-leaf/10 p-3 text-sm text-forest">
+        <div className="flex items-start gap-3 rounded-xl bg-leaf/12 p-3 text-sm text-forest">
           <Info className="mt-0.5 size-4 shrink-0" aria-hidden /> {importInfo}
         </div>
       ) : null}
@@ -564,7 +574,7 @@ function Certificados() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-start gap-3 rounded-xl border border-line bg-cream p-4 text-sm text-ink-soft">
+      <div className="card card-soft flex items-start gap-3 rounded-xl p-4 text-sm text-ink-soft">
         <Info className="mt-0.5 size-4 shrink-0 text-forest" aria-hidden />
         <span>Registre a frequência e a aprovação do instrutor. Ao atingir 80% e aprovação, emita o certificado — anexe o PDF que o SENAR fornece. O aluno passa a baixar exatamente esse arquivo na área dele.</span>
       </div>
@@ -579,7 +589,7 @@ function Certificados() {
               const cert = certByInsc.get(insc.id);
               const apto = insc.percentualFrequencia >= 80 && insc.aprovadoInstrutor;
               return (
-                <div key={insc.id} className="flex flex-col gap-4 rounded-xl border border-line bg-paper p-4 lg:flex-row lg:items-center lg:justify-between">
+                <div key={insc.id} className="flex flex-col gap-4 rounded-xl bg-paper-2 p-4 lg:flex-row lg:items-center lg:justify-between">
                   <div className="min-w-0 lg:flex-1">
                     <p className="font-semibold text-pine">{insc.alunoNome}</p>
                     <p className="text-xs text-ink-soft">{turma?.cursoNome}</p>
@@ -592,7 +602,7 @@ function Certificados() {
                       <input
                         type="number" min={0} max={100} value={insc.percentualFrequencia}
                         onChange={(e) => setFreq(insc.id, Number(e.target.value), insc.aprovadoInstrutor)}
-                        className="w-16 rounded-lg border border-line bg-white px-2 py-1 text-sm font-semibold text-pine"
+                        className="w-16 rounded-lg bg-paper-2 px-2 py-1 text-sm font-semibold text-pine"
                       />
                       <span className="text-ink-soft">%</span>
                     </label>
@@ -682,10 +692,56 @@ function Relatorios({ resumo }: { resumo: Resumo }) {
         <StatTile icon={TrendingUp} value={certificados.length || resumo.certificadosAptos} label={certificados.length ? "Certificados emitidos" : "Aptos a certificado"} tone="guava" />
       </div>
 
-      <Panel title="Prestação de contas ao SENAR-SP" description="Exportações prontas para envio (baixam de verdade)">
+      <Panel title="Consolidado por turma" description="Base da prestação de contas ao SENAR-SP">
+        {turmas.length === 0 ? (
+          <p className="text-sm text-ink-soft">Nenhuma turma cadastrada.</p>
+        ) : (
+          <div className="-mx-5 overflow-x-auto">
+            <table className="w-full min-w-[820px] border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-line text-left text-xs font-bold uppercase tracking-wide text-ink-soft">
+                  <th className="px-5 py-3">Turma</th>
+                  <th className="px-3 py-3">Inscritos</th>
+                  <th className="px-3 py-3">Confirmados</th>
+                  <th className="px-3 py-3">Concluídos</th>
+                  <th className="px-3 py-3">Freq. média</th>
+                  <th className="px-3 py-3">Certificados</th>
+                  <th className="px-3 py-3">Carga</th>
+                  <th className="px-5 py-3">Ofício</th>
+                </tr>
+              </thead>
+              <tbody>
+                {turmas.map((t) => {
+                  const insc = inscricoes.filter((i) => i.turmaId === t.id);
+                  const confirmados = insc.filter((i) => ["confirmada", "concluida"].includes(i.status)).length;
+                  const concl = insc.filter((i) => i.status === "concluida").length;
+                  const comFreq = insc.filter((i) => i.percentualFrequencia > 0);
+                  const freqMedia = comFreq.length ? Math.round(comFreq.reduce((s, i) => s + i.percentualFrequencia, 0) / comFreq.length) : 0;
+                  const certs = certificados.filter((c) => c.turmaId === t.id).length;
+                  const carga = t.encontros.reduce((s, e) => s + e.cargaHoraria, 0);
+                  return (
+                    <tr key={t.id} className="border-b border-line/70 last:border-0 hover:bg-paper">
+                      <td className="px-5 py-3"><p className="font-semibold text-pine">{t.cursoNome}</p><p className="text-xs text-ink-soft">{turmaStatusLabels[t.status]}</p></td>
+                      <td className="px-3 py-3">{insc.length}</td>
+                      <td className="px-3 py-3">{confirmados}</td>
+                      <td className="px-3 py-3">{concl}</td>
+                      <td className="px-3 py-3">{freqMedia}%</td>
+                      <td className="px-3 py-3">{certs}</td>
+                      <td className="px-3 py-3">{carga}h</td>
+                      <td className="px-5 py-3 text-ink-soft">{t.numeroOficio ?? "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
+
+      <Panel title="Exportações" description="Arquivos prontos para envio (baixam de verdade)">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {reports.map((r) => (
-            <button key={r.title} type="button" onClick={r.run} className="group flex items-center gap-4 rounded-xl border border-line bg-paper p-4 text-left transition hover:border-mist hover:bg-cream">
+            <button key={r.title} type="button" onClick={r.run} className="group flex items-center gap-4 rounded-xl bg-paper-2 p-4 text-left transition hover:bg-mist/40">
               <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-forest/8 text-forest"><r.icon className="size-5" aria-hidden /></span>
               <div className="min-w-0 flex-1"><p className="font-semibold text-pine">{r.title}</p><p className="text-xs text-ink-soft">{r.desc}</p></div>
               <Download className="size-4 text-ink-soft transition group-hover:text-forest" aria-hidden />
@@ -694,11 +750,34 @@ function Relatorios({ resumo }: { resumo: Resumo }) {
         </div>
       </Panel>
 
+      <Panel title="Integração com o SENAR-SP" description="Sincronização automática (em preparação)">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-harvest/15 text-harvest-deep"><ShieldCheck className="size-5" aria-hidden /></span>
+            <div>
+              <p className="font-semibold text-pine">Conector SENAR-SP</p>
+              <p className="text-sm text-ink-soft">Puxa matrículas e turmas do sistema do SENAR e devolve frequência e certificados — sem digitar duas vezes.</p>
+            </div>
+          </div>
+          <span className="chip shrink-0 self-start bg-paper-2 text-ink-soft">● Não conectado</span>
+        </div>
+        <ul className="mt-4 grid gap-2 text-sm text-ink-soft sm:grid-cols-2">
+          <li className="flex items-center gap-2"><Check className="size-4 text-moss" aria-hidden /> Importar turmas e ofícios do SENAR</li>
+          <li className="flex items-center gap-2"><Check className="size-4 text-moss" aria-hidden /> Sincronizar matrículas por CPF</li>
+          <li className="flex items-center gap-2"><Check className="size-4 text-moss" aria-hidden /> Enviar frequência e presença</li>
+          <li className="flex items-center gap-2"><Check className="size-4 text-moss" aria-hidden /> Receber certificados emitidos</li>
+        </ul>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button type="button" disabled className="btn btn-primary !py-2 text-sm opacity-60">Conectar ao SENAR (em breve)</button>
+          <span className="text-xs text-ink-soft">Enquanto isso, use a <strong>importação CSV</strong> em “Alunos”.</span>
+        </div>
+      </Panel>
+
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel title="Instrutores credenciados">
           <ul className="space-y-3">
             {instrutores.map((inst) => (
-              <li key={inst.id} className="flex items-center gap-3 rounded-xl border border-line bg-paper px-4 py-3">
+              <li key={inst.id} className="flex items-center gap-3 rounded-xl bg-paper-2 px-4 py-3">
                 <span className="grid size-10 shrink-0 place-items-center rounded-full bg-forest/8 text-forest"><GraduationCap className="size-5" aria-hidden /></span>
                 <div className="min-w-0 flex-1"><p className="font-semibold text-pine">{inst.nome}</p><p className="truncate text-xs text-ink-soft">{inst.especialidades.join(" · ")}</p></div>
                 {inst.credenciado ? <span className="chip bg-leaf/15 text-forest">Credenciado</span> : null}
@@ -713,7 +792,7 @@ function Relatorios({ resumo }: { resumo: Resumo }) {
           ) : (
             <ul className="space-y-3">
               {supervisores.map((nome) => (
-                <li key={nome} className="flex items-center gap-3 rounded-xl border border-line bg-paper px-4 py-3">
+                <li key={nome} className="flex items-center gap-3 rounded-xl bg-paper-2 px-4 py-3">
                   <span className="grid size-10 shrink-0 place-items-center rounded-full bg-harvest/15 text-harvest-deep"><ShieldCheck className="size-5" aria-hidden /></span>
                   <div className="min-w-0 flex-1"><p className="font-semibold text-pine">{nome}</p><p className="text-xs text-ink-soft">Supervisor(a) SENAR-SP</p></div>
                   <span className="chip bg-paper-2 text-ink-soft">{turmas.filter((t) => t.supervisorSenar?.nome === nome).length} turmas</span>
@@ -738,6 +817,8 @@ function TurmaFormModal({ open, turma, onClose }: { open: boolean; turma: Turma 
 
   const [cursoId, setCursoId] = useState(cursos[0].id);
   const [local, setLocal] = useState("Sede do Sindicato Rural");
+  const [endereco, setEndereco] = useState("");
+  const [mapsUrl, setMapsUrl] = useState("");
   const [municipio, setMunicipio] = useState("São José dos Campos");
   const [instrutorId, setInstrutorId] = useState<string>("");
   const [capacidade, setCapacidade] = useState(20);
@@ -745,6 +826,7 @@ function TurmaFormModal({ open, turma, onClose }: { open: boolean; turma: Turma 
   const [qtdEncontros, setQtdEncontros] = useState(3);
   const [cargaPorEncontro, setCargaPorEncontro] = useState(8);
   const [status, setStatus] = useState<TurmaStatus>("mobilizacao");
+  const [autoConfirma, setAutoConfirma] = useState(false);
   const [numeroOficio, setNumeroOficio] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [supervisor, setSupervisor] = useState("");
@@ -757,6 +839,8 @@ function TurmaFormModal({ open, turma, onClose }: { open: boolean; turma: Turma 
     if (turma) {
       setCursoId(turma.cursoId);
       setLocal(turma.local);
+      setEndereco(turma.endereco ?? "");
+      setMapsUrl(turma.mapsUrl ?? "");
       setMunicipio(turma.municipio);
       setInstrutorId(turma.instrutorId ?? "");
       setCapacidade(turma.capacidade);
@@ -764,12 +848,15 @@ function TurmaFormModal({ open, turma, onClose }: { open: boolean; turma: Turma 
       setQtdEncontros(turma.encontros.length || 1);
       setCargaPorEncontro(turma.encontros[0]?.cargaHoraria ?? 8);
       setStatus(turma.status);
+      setAutoConfirma(turma.confirmacaoAutomatica);
       setNumeroOficio(turma.numeroOficio ?? "");
       setWhatsapp(turma.whatsappGrupoUrl ?? "");
       setSupervisor(turma.supervisorSenar?.nome ?? "");
     } else {
       setCursoId(cursos[0].id);
       setLocal("Sede do Sindicato Rural");
+      setEndereco("");
+      setMapsUrl("");
       setMunicipio("São José dos Campos");
       setInstrutorId("");
       setCapacidade(20);
@@ -777,6 +864,7 @@ function TurmaFormModal({ open, turma, onClose }: { open: boolean; turma: Turma 
       setQtdEncontros(3);
       setCargaPorEncontro(8);
       setStatus("mobilizacao");
+      setAutoConfirma(false);
       setNumeroOficio("");
       setWhatsapp("");
       setSupervisor("");
@@ -801,21 +889,24 @@ function TurmaFormModal({ open, turma, onClose }: { open: boolean; turma: Turma 
       cursoId,
       cursoNome: curso.nome,
       local,
+      endereco: endereco.trim() || null,
+      mapsUrl: mapsUrl.trim() || null,
       municipio,
       instrutorId: inst?.id ?? null,
       instrutorNome: inst?.nome ?? null,
       capacidade,
       encontros: buildEncontros(),
       status,
+      confirmacaoAutomatica: autoConfirma,
       numeroOficio: numeroOficio.trim() || null,
       whatsappGrupoUrl: whatsapp.trim() || null,
       supervisorSenar: supervisor.trim() ? { nome: supervisor.trim(), contato: "" } : null,
     };
     if (editing && turma) {
       updateTurma(turma.id, {
-        cursoId: base.cursoId, cursoNome: base.cursoNome, local: base.local, municipio: base.municipio,
+        cursoId: base.cursoId, cursoNome: base.cursoNome, local: base.local, endereco: base.endereco, mapsUrl: base.mapsUrl, municipio: base.municipio,
         instrutorId: base.instrutorId, instrutorNome: base.instrutorNome, capacidade: base.capacidade,
-        encontros: base.encontros.length ? base.encontros : turma.encontros, status: base.status,
+        encontros: base.encontros.length ? base.encontros : turma.encontros, status: base.status, confirmacaoAutomatica: base.confirmacaoAutomatica,
         numeroOficio: base.numeroOficio, whatsappGrupoUrl: base.whatsappGrupoUrl, supervisorSenar: base.supervisorSenar,
       });
     } else {
@@ -845,9 +936,11 @@ function TurmaFormModal({ open, turma, onClose }: { open: boolean; turma: Turma 
           </select>
         </Labeled>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Labeled label="Local"><input value={local} onChange={(e) => setLocal(e.target.value)} className={fieldClass()} /></Labeled>
+          <Labeled label="Local"><input value={local} onChange={(e) => setLocal(e.target.value)} placeholder="Ex.: Sítio Santa Rita" className={fieldClass()} /></Labeled>
           <Labeled label="Município"><input value={municipio} onChange={(e) => setMunicipio(e.target.value)} className={fieldClass()} /></Labeled>
         </div>
+        <Labeled label="Endereço do local"><input value={endereco} onChange={(e) => setEndereco(e.target.value)} placeholder="Estrada Municipal, km 12 — Bairro Rural do Jaguari" className={fieldClass()} /></Labeled>
+        <Labeled label="Link do Google Maps (opcional)"><input value={mapsUrl} onChange={(e) => setMapsUrl(e.target.value)} placeholder="https://maps.app.goo.gl/..." className={fieldClass()} /></Labeled>
         <div className="grid gap-4 sm:grid-cols-2">
           <Labeled label="Instrutor">
             <select value={instrutorId} onChange={(e) => setInstrutorId(e.target.value)} className={fieldClass()}>
@@ -874,6 +967,19 @@ function TurmaFormModal({ open, turma, onClose }: { open: boolean; turma: Turma 
           <Labeled label="Supervisor SENAR (opcional)"><input value={supervisor} onChange={(e) => setSupervisor(e.target.value)} className={fieldClass()} /></Labeled>
         </div>
         <Labeled label="Grupo de WhatsApp (opcional)"><input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="https://wa.me/55..." className={fieldClass()} /></Labeled>
+
+        <div className="rounded-xl bg-paper-2 p-4">
+          <label className="flex cursor-pointer items-start gap-3">
+            <input type="checkbox" checked={autoConfirma} onChange={(e) => setAutoConfirma(e.target.checked)} className="mt-1 size-4 accent-[var(--color-forest)]" />
+            <span>
+              <span className="font-semibold text-pine">Confirmação automática (sem trava de prioridade)</span>
+              <span className="mt-0.5 block text-sm text-ink-soft">
+                Ativado: todo mundo que se inscrever entra <strong>direto na turma</strong> (vaga confirmada).
+                Desativado: as inscrições ficam <strong>pendentes</strong> e entram na fila por prioridade do SENAR.
+              </span>
+            </span>
+          </label>
+        </div>
       </div>
     </Modal>
   );
@@ -973,7 +1079,7 @@ function CertUploadModal({ inscricaoId, onClose, onEmit }: { inscricaoId: string
         </>
       }
     >
-      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-mist bg-cream px-6 py-10 text-center hover:border-forest">
+      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl bg-paper-2 px-6 py-10 text-center transition hover:bg-mist/40">
         <Upload className="size-7 text-forest" aria-hidden />
         <span className="font-semibold text-pine">{file ? file.fileName : "Selecionar arquivo do certificado"}</span>
         <span className="text-xs text-ink-soft">PDF ou imagem · opcional</span>

@@ -101,6 +101,8 @@ export interface Turma {
   instrutorId: string | null;
   instrutorNome: string | null;
   local: string;
+  endereco?: string | null;
+  mapsUrl?: string | null;
   municipio: string;
   encontros: Encontro[];
   capacidade: number;

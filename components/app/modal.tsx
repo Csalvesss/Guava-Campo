@@ -59,7 +59,7 @@ export function Modal({
           <button
             type="button"
             onClick={onClose}
-            className="grid size-9 shrink-0 place-items-center rounded-xl border border-line bg-cream text-ink-soft hover:text-forest"
+            className="grid size-9 shrink-0 place-items-center rounded-xl bg-paper-2 text-ink-soft hover:text-forest"
             aria-label="Fechar"
           >
             <X className="size-5" />
