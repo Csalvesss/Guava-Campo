@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AlunoDashboard } from "@/components/aluno/aluno-dashboard";
+import { StoreProvider } from "@/lib/store";
 
 export const metadata: Metadata = {
   title: "Área do aluno",
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function AlunoPage() {
-  return <AlunoDashboard />;
+  return (
+    <StoreProvider>
+      <AlunoDashboard />
+    </StoreProvider>
+  );
 }

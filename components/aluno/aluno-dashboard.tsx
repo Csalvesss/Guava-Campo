@@ -25,7 +25,6 @@ import {
 } from "lucide-react";
 import { DashboardShell, type NavItem } from "@/components/app/dashboard-shell";
 import { InscricaoBadge, Panel, Progress, StatTile, TurmaBadge } from "@/components/app/ui";
-import { calcularPercentualFrequencia } from "@/lib/business-rules";
 import {
   cursoTipoCurto,
   formatFullDate,
@@ -34,49 +33,55 @@ import {
   turmaOfCourse,
   vagasRestantes,
 } from "@/lib/catalog";
-import { alunos, cursos, inscricoes, turmas } from "@/lib/seed";
+import { downloadBlob, downloadDataUrl, gerarCertificadoHTML } from "@/lib/exports";
+import { cursos } from "@/lib/seed";
+import { useStore, type Certificado } from "@/lib/store";
 import { categoriaLabels } from "@/lib/types";
+import type { Aluno, Curso, Inscricao, Turma } from "@/lib/types";
 
-const aluno = alunos.find((a) => a.id === "aluno-marina") ?? alunos[0];
-const minhasInscricoes = inscricoes.filter((i) => i.alunoId === aluno.id);
-const concluidos = cursos.filter((c) => aluno.cursosConcluidos.includes(c.id));
-const disponiveis = cursos.filter(
-  (c) => !aluno.cursosConcluidos.includes(c.id) && !minhasInscricoes.some((i) => i.cursoId === c.id),
-);
-
-function proximoEncontro() {
-  const now = new Date("2026-08-03T00:00:00-03:00").getTime();
-  const futuros = minhasInscricoes
-    .flatMap((i) => {
-      const turma = turmas.find((t) => t.id === i.turmaId);
-      return turma ? turma.encontros.map((e) => ({ data: e.data, turma })) : [];
-    })
-    .filter((e) => new Date(e.data).getTime() >= now)
-    .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-  return futuros[0];
-}
-
-const primeiroNome = aluno.nome.split(" ")[0];
-const proximo = proximoEncontro();
-
-const nav: NavItem[] = [
-  { id: "painel", label: "Meu painel", icon: LayoutDashboard },
-  { id: "inscricoes", label: "Minhas inscrições", icon: ClipboardList, badge: minhasInscricoes.length },
-  { id: "certificados", label: "Certificados", icon: BadgeCheck },
-  { id: "cursos", label: "Cursos disponíveis", icon: BookOpen },
-  { id: "dados", label: "Meus dados", icon: UserRound },
-];
-
-const titles: Record<string, { title: string; subtitle: string }> = {
-  painel: { title: `Olá, ${primeiroNome} 👋`, subtitle: "Acompanhe suas capacitações com o Sindicato Rural." },
-  inscricoes: { title: "Minhas inscrições", subtitle: "Status, turmas e grupos das suas capacitações." },
-  certificados: { title: "Meus certificados", subtitle: "Documentos concluídos e validação SENAR." },
-  cursos: { title: "Cursos disponíveis", subtitle: "Novas turmas abertas para você." },
-  dados: { title: "Meus dados", subtitle: "Informações de contato e da propriedade." },
-};
+const REF_DATE = new Date("2026-08-03T00:00:00-03:00").getTime();
 
 export function AlunoDashboard() {
+  const store = useStore();
   const [active, setActive] = useState("painel");
+
+  const aluno = store.alunos.find((a) => a.id === "aluno-marina") ?? store.alunos[0];
+  const minhasInscricoes = store.inscricoes.filter((i) => i.alunoId === aluno.id);
+  const meusCertificados = store.certificados.filter((c) => c.alunoId === aluno.id);
+  const concluidos = cursos.filter((c) => aluno.cursosConcluidos.includes(c.id));
+  const disponiveis = cursos.filter(
+    (c) => !aluno.cursosConcluidos.includes(c.id) && !minhasInscricoes.some((i) => i.cursoId === c.id),
+  );
+
+  const proximo = (() => {
+    const futuros = minhasInscricoes
+      .flatMap((i) => {
+        const turma = store.turmas.find((t) => t.id === i.turmaId);
+        return turma ? turma.encontros.map((e) => ({ data: e.data, turma })) : [];
+      })
+      .filter((e) => new Date(e.data).getTime() >= REF_DATE)
+      .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+    return futuros[0];
+  })();
+
+  const primeiroNome = aluno.nome.split(" ")[0];
+  const totalCertificados = meusCertificados.length + concluidos.filter((c) => !meusCertificados.some((m) => m.cursoId === c.id)).length;
+
+  const nav: NavItem[] = [
+    { id: "painel", label: "Meu painel", icon: LayoutDashboard },
+    { id: "inscricoes", label: "Minhas inscrições", icon: ClipboardList, badge: minhasInscricoes.length || undefined },
+    { id: "certificados", label: "Certificados", icon: BadgeCheck },
+    { id: "cursos", label: "Cursos disponíveis", icon: BookOpen },
+    { id: "dados", label: "Meus dados", icon: UserRound },
+  ];
+
+  const titles: Record<string, { title: string; subtitle: string }> = {
+    painel: { title: `Olá, ${primeiroNome} 👋`, subtitle: "Acompanhe suas capacitações com o Sindicato Rural." },
+    inscricoes: { title: "Minhas inscrições", subtitle: "Status, turmas e grupos das suas capacitações." },
+    certificados: { title: "Meus certificados", subtitle: "Documentos concluídos e validação SENAR." },
+    cursos: { title: "Cursos disponíveis", subtitle: "Novas turmas abertas para você." },
+    dados: { title: "Meus dados", subtitle: "Informações de contato e da propriedade." },
+  };
   const meta = titles[active];
 
   return (
@@ -96,27 +101,54 @@ export function AlunoDashboard() {
         </Link>
       }
     >
-      {active === "painel" ? <Painel onNavigate={setActive} /> : null}
-      {active === "inscricoes" ? <Inscricoes /> : null}
-      {active === "certificados" ? <Certificados /> : null}
-      {active === "cursos" ? <Cursos /> : null}
-      {active === "dados" ? <Dados /> : null}
+      {active === "painel" ? (
+        <Painel
+          aluno={aluno}
+          minhasInscricoes={minhasInscricoes}
+          turmas={store.turmas}
+          disponiveis={disponiveis}
+          concluidos={concluidos}
+          totalCertificados={totalCertificados}
+          proximo={proximo}
+          onNavigate={setActive}
+        />
+      ) : null}
+      {active === "inscricoes" ? <Inscricoes minhasInscricoes={minhasInscricoes} turmas={store.turmas} /> : null}
+      {active === "certificados" ? <Certificados certificados={meusCertificados} concluidos={concluidos} aluno={aluno} /> : null}
+      {active === "cursos" ? <Cursos disponiveis={disponiveis} /> : null}
+      {active === "dados" ? <Dados aluno={aluno} /> : null}
     </DashboardShell>
   );
 }
 
 /* ---------------- Painel ---------------- */
-function Painel({ onNavigate }: { onNavigate: (id: string) => void }) {
-  const ativas = minhasInscricoes.filter((i) =>
-    ["pendente", "confirmada", "lista_espera"].includes(i.status),
-  ).length;
+function Painel({
+  aluno,
+  minhasInscricoes,
+  turmas,
+  disponiveis,
+  concluidos,
+  totalCertificados,
+  proximo,
+  onNavigate,
+}: {
+  aluno: Aluno;
+  minhasInscricoes: Inscricao[];
+  turmas: Turma[];
+  disponiveis: Curso[];
+  concluidos: Curso[];
+  totalCertificados: number;
+  proximo?: { data: string; turma: Turma };
+  onNavigate: (id: string) => void;
+}) {
+  const ativas = minhasInscricoes.filter((i) => ["pendente", "confirmada", "lista_espera"].includes(i.status)).length;
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatTile icon={ClipboardList} value={ativas} label="Inscrições ativas" hint="em andamento" tone="forest" />
         <StatTile icon={Award} value={concluidos.length} label="Cursos concluídos" hint="no seu histórico" tone="moss" />
-        <StatTile icon={BadgeCheck} value={concluidos.length} label="Certificados" hint="prontos para baixar" tone="harvest" />
+        <StatTile icon={BadgeCheck} value={totalCertificados} label="Certificados" hint="prontos para baixar" tone="harvest" />
         <StatTile
           icon={CalendarDays}
           value={proximo ? formatShortDate(proximo.data) : "—"}
@@ -131,9 +163,7 @@ function Painel({ onNavigate }: { onNavigate: (id: string) => void }) {
           <Panel title="Próximo encontro" description="Prepare-se para o dia da capacitação">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
               <div className="grid shrink-0 place-items-center rounded-2xl bg-forest px-6 py-4 text-cream">
-                <span className="font-display text-4xl font-semibold leading-none">
-                  {new Date(proximo.data).getDate()}
-                </span>
+                <span className="font-display text-4xl font-semibold leading-none">{new Date(proximo.data).getDate()}</span>
                 <span className="mt-1 text-xs font-bold uppercase tracking-widest text-harvest">
                   {new Intl.DateTimeFormat("pt-BR", { month: "short" }).format(new Date(proximo.data)).replace(".", "")}
                 </span>
@@ -141,81 +171,68 @@ function Painel({ onNavigate }: { onNavigate: (id: string) => void }) {
               <div className="min-w-0 flex-1">
                 <h3 className="font-display text-xl font-semibold text-pine">{proximo.turma.cursoNome}</h3>
                 <div className="mt-2 grid gap-1.5 text-sm text-ink-soft">
-                  <p className="flex items-center gap-2">
-                    <Clock className="size-4 text-forest" aria-hidden /> {formatFullDate(proximo.data)} · início às 08h
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <MapPin className="size-4 text-forest" aria-hidden /> {proximo.turma.local}
-                  </p>
+                  <p className="flex items-center gap-2"><Clock className="size-4 text-forest" aria-hidden /> {formatFullDate(proximo.data)} · início às 08h</p>
+                  <p className="flex items-center gap-2"><MapPin className="size-4 text-forest" aria-hidden /> {proximo.turma.local}</p>
                 </div>
                 {proximo.turma.whatsappGrupoUrl ? (
-                  <a
-                    href={proximo.turma.whatsappGrupoUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn btn-gold mt-4 !py-2 text-sm"
-                  >
+                  <a href={proximo.turma.whatsappGrupoUrl} target="_blank" rel="noreferrer" className="btn btn-gold mt-4 !py-2 text-sm">
                     <MessageCircle className="size-4" aria-hidden /> Grupo da turma
                   </a>
                 ) : null}
               </div>
             </div>
           </Panel>
-        ) : null}
+        ) : (
+          <Panel title="Sua agenda" description="Nenhum encontro marcado">
+            <p className="text-sm text-ink-soft">Assim que uma turma for confirmada, o próximo encontro aparece aqui.</p>
+          </Panel>
+        )}
 
         <Panel title="Continue sua trilha" description="Cursos que combinam com você">
           <ul className="space-y-3">
             {disponiveis.slice(0, 3).map((curso) => (
               <li key={curso.id} className="flex items-center gap-3">
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-forest/8 text-forest">
-                  <Sprout className="size-5" aria-hidden />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-pine">{curso.nome}</p>
-                  <p className="text-xs text-ink-soft">{curso.eixo} · {curso.cargaHoraria}h</p>
-                </div>
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-forest/8 text-forest"><Sprout className="size-5" aria-hidden /></span>
+                <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-pine">{curso.nome}</p><p className="text-xs text-ink-soft">{curso.eixo} · {curso.cargaHoraria}h</p></div>
               </li>
             ))}
           </ul>
-          <button
-            type="button"
-            onClick={() => onNavigate("cursos")}
-            className="btn btn-light mt-4 w-full !py-2 text-sm"
-          >
-            Ver todos os cursos <ArrowRight className="size-4" aria-hidden />
-          </button>
+          <button type="button" onClick={() => onNavigate("cursos")} className="btn btn-light mt-4 w-full !py-2 text-sm">Ver todos os cursos <ArrowRight className="size-4" aria-hidden /></button>
         </Panel>
       </div>
 
       <Panel title="Inscrições recentes" action={<button type="button" onClick={() => onNavigate("inscricoes")} className="text-sm font-semibold text-forest hover:underline">Ver todas</button>}>
-        <div className="space-y-3">
-          {minhasInscricoes.map((insc) => {
-            const turma = turmas.find((t) => t.id === insc.turmaId);
-            return (
-              <div key={insc.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-paper px-4 py-3">
-                <div className="min-w-0">
-                  <p className="truncate font-semibold text-pine">{turma?.cursoNome}</p>
-                  <p className="text-xs text-ink-soft">{turma ? periodoTurma(turma) : ""} · {turma?.local}</p>
+        {minhasInscricoes.length === 0 ? (
+          <p className="text-sm text-ink-soft">Você ainda não tem inscrições. Explore os cursos disponíveis.</p>
+        ) : (
+          <div className="space-y-3">
+            {minhasInscricoes.map((insc) => {
+              const turma = turmas.find((t) => t.id === insc.turmaId);
+              return (
+                <div key={insc.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-paper px-4 py-3">
+                  <div className="min-w-0"><p className="truncate font-semibold text-pine">{turma?.cursoNome}</p><p className="text-xs text-ink-soft">{turma ? periodoTurma(turma) : ""} · {turma?.local}</p></div>
+                  <InscricaoBadge status={insc.status} />
                 </div>
-                <InscricaoBadge status={insc.status} />
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </Panel>
     </div>
   );
 }
 
 /* ---------------- Inscrições ---------------- */
-function Inscricoes() {
+function Inscricoes({ minhasInscricoes, turmas }: { minhasInscricoes: Inscricao[]; turmas: Turma[] }) {
+  if (minhasInscricoes.length === 0) {
+    return <Panel><p className="text-sm text-ink-soft">Você ainda não tem inscrições.</p></Panel>;
+  }
   return (
     <div className="space-y-5">
       {minhasInscricoes.map((insc) => {
         const turma = turmas.find((t) => t.id === insc.turmaId);
         const curso = cursos.find((c) => c.id === insc.cursoId);
         if (!turma || !curso) return null;
-        const freq = calcularPercentualFrequencia(insc);
         return (
           <Panel key={insc.id}>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -232,18 +249,13 @@ function Inscricoes() {
                   <p className="flex items-center gap-2"><ShieldCheck className="size-4 text-forest" aria-hidden /> Prioridade {insc.prioridade}</p>
                 </div>
               </div>
-              <div className="shrink-0 text-left sm:text-right">
-                <InscricaoBadge status={insc.status} />
-              </div>
+              <div className="shrink-0"><InscricaoBadge status={insc.status} /></div>
             </div>
 
             <div className="mt-5 grid gap-4 border-t border-line pt-5 sm:grid-cols-2">
               <div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-semibold text-pine">Frequência</span>
-                  <span className="text-ink-soft">{freq}%</span>
-                </div>
-                <div className="mt-2"><Progress value={freq} /></div>
+                <div className="flex items-center justify-between text-sm"><span className="font-semibold text-pine">Frequência</span><span className="text-ink-soft">{insc.percentualFrequencia}%</span></div>
+                <div className="mt-2"><Progress value={insc.percentualFrequencia} /></div>
                 <p className="mt-1.5 text-xs text-ink-soft">Mínimo de 80% para o certificado.</p>
               </div>
               <div className="grid gap-2 text-sm">
@@ -255,15 +267,11 @@ function Inscricoes() {
 
             <div className="mt-5 flex flex-wrap gap-2">
               {turma.whatsappGrupoUrl && insc.grupoLiberado ? (
-                <a href={turma.whatsappGrupoUrl} target="_blank" rel="noreferrer" className="btn btn-gold !py-2 text-sm">
-                  <MessageCircle className="size-4" aria-hidden /> Entrar no grupo
-                </a>
+                <a href={turma.whatsappGrupoUrl} target="_blank" rel="noreferrer" className="btn btn-gold !py-2 text-sm"><MessageCircle className="size-4" aria-hidden /> Entrar no grupo</a>
               ) : (
                 <span className="chip bg-paper-2 text-ink-soft">Grupo liberado após confirmação</span>
               )}
-              {insc.status === "pendente" ? (
-                <span className="chip bg-harvest/15 text-harvest-deep">Aguardando confirmação do sindicato</span>
-              ) : null}
+              {insc.status === "pendente" ? <span className="chip bg-harvest/15 text-harvest-deep">Aguardando confirmação do sindicato</span> : null}
             </div>
           </Panel>
         );
@@ -282,65 +290,73 @@ function StatusLine({ ok, label }: { ok: boolean; label: string }) {
 }
 
 /* ---------------- Certificados ---------------- */
-function Certificados() {
-  if (concluidos.length === 0) {
+function Certificados({ certificados, concluidos, aluno }: { certificados: Certificado[]; concluidos: Curso[]; aluno: Aluno }) {
+  // Cursos concluídos sem certificado emitido pelo sindicato (histórico) — gerados sob demanda.
+  const historicos = concluidos.filter((c) => !certificados.some((cert) => cert.cursoId === c.id));
+
+  function baixar(cert: Certificado) {
+    if (cert.dataUrl) downloadDataUrl(cert.fileName ?? `certificado-${cert.codigo}.pdf`, cert.dataUrl);
+    else downloadBlob(`certificado-${cert.codigo}.html`, gerarCertificadoHTML(cert), "text/html;charset=utf-8");
+  }
+
+  function baixarHistorico(curso: Curso) {
+    const cert: Certificado = {
+      id: curso.id, inscricaoId: "", alunoId: aluno.id, alunoNome: aluno.nome,
+      cursoId: curso.id, cursoNome: curso.nome, turmaId: "", cargaHoraria: curso.cargaHoraria,
+      codigo: `SJC-2026-${curso.eixo.replace(/[^a-zA-Z]/g, "").slice(0, 3).toUpperCase()}-1001`,
+      fileName: null, dataUrl: null, emitidoEm: "2026-07-20T00:00:00-03:00",
+    };
+    downloadBlob(`certificado-${cert.codigo}.html`, gerarCertificadoHTML(cert), "text/html;charset=utf-8");
+  }
+
+  if (certificados.length === 0 && historicos.length === 0) {
     return (
       <Panel>
         <p className="text-sm text-ink-soft">
-          Você ainda não concluiu nenhum curso. Ao atingir 80% de frequência e ser aprovado pelo
-          instrutor, seu certificado aparece aqui.
+          Você ainda não concluiu nenhum curso. Ao atingir 80% de frequência e ser aprovado pelo instrutor,
+          seu certificado emitido pelo sindicato aparece aqui para download.
         </p>
       </Panel>
     );
   }
+
   return (
     <div className="grid gap-5 lg:grid-cols-2">
-      {concluidos.map((curso, i) => {
-        const codigo = `SJC-2026-${curso.eixo.slice(0, 3).toUpperCase()}-${String(1001 + i)}`;
-        return (
-          <div key={curso.id} className="card card-soft overflow-hidden">
-            <div className="relative flex items-center justify-between gap-4 bg-forest px-6 py-5 text-cream">
-              <div
-                className="pointer-events-none absolute inset-0 opacity-20"
-                style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(216,161,58,0.5) 0 1px, transparent 1px 12px)" }}
-                aria-hidden
-              />
-              <div className="relative">
-                <p className="text-xs font-bold uppercase tracking-widest text-harvest">Certificado SENAR</p>
-                <h3 className="mt-1 font-display text-lg font-semibold text-white">{curso.nome}</h3>
-              </div>
-              <Image src="/senar-sp.png" alt="SENAR" width={48} height={48} className="relative size-11 rounded-lg bg-white p-1 object-contain" />
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">Carga horária</p>
-                  <p className="font-semibold text-pine">{curso.cargaHoraria} horas</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">Concluído em</p>
-                  <p className="font-semibold text-pine">Julho / 2026</p>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">Código de validação</p>
-                  <p className="flex items-center gap-2 font-mono font-semibold text-forest">
-                    <QrCode className="size-4" aria-hidden /> {codigo}
-                  </p>
-                </div>
-              </div>
-              <button type="button" className="btn btn-primary mt-5 w-full !py-2.5 text-sm">
-                <Download className="size-4" aria-hidden /> Baixar certificado (PDF)
-              </button>
-            </div>
-          </div>
-        );
-      })}
+      {certificados.map((cert) => (
+        <CertCard key={cert.id} nome={cert.cursoNome} carga={cert.cargaHoraria} codigo={cert.codigo} emitido={new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(new Date(cert.emitidoEm))} anexo={cert.fileName} onDownload={() => baixar(cert)} />
+      ))}
+      {historicos.map((curso) => (
+        <CertCard key={curso.id} nome={curso.nome} carga={curso.cargaHoraria} codigo={`SJC-2026-${curso.eixo.slice(0, 3).toUpperCase()}-1001`} emitido="Julho / 2026" anexo={null} onDownload={() => baixarHistorico(curso)} />
+      ))}
+    </div>
+  );
+}
+
+function CertCard({ nome, carga, codigo, emitido, anexo, onDownload }: { nome: string; carga: number; codigo: string; emitido: string; anexo: string | null; onDownload: () => void }) {
+  return (
+    <div className="card card-soft overflow-hidden">
+      <div className="relative flex items-center justify-between gap-4 bg-forest px-6 py-5 text-cream">
+        <div className="pointer-events-none absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(216,161,58,0.5) 0 1px, transparent 1px 12px)" }} aria-hidden />
+        <div className="relative"><p className="text-xs font-bold uppercase tracking-widest text-harvest">Certificado SENAR</p><h3 className="mt-1 font-display text-lg font-semibold text-white">{nome}</h3></div>
+        <Image src="/senar-sp.png" alt="SENAR" width={48} height={48} className="relative size-11 rounded-lg bg-white p-1 object-contain" />
+      </div>
+      <div className="p-6">
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div><p className="text-xs font-bold uppercase tracking-wide text-ink-soft">Carga horária</p><p className="font-semibold text-pine">{carga} horas</p></div>
+          <div><p className="text-xs font-bold uppercase tracking-wide text-ink-soft">Emitido</p><p className="font-semibold text-pine capitalize">{emitido}</p></div>
+          <div className="col-span-2"><p className="text-xs font-bold uppercase tracking-wide text-ink-soft">Código de validação</p><p className="flex items-center gap-2 font-mono font-semibold text-forest"><QrCode className="size-4" aria-hidden /> {codigo}</p></div>
+        </div>
+        <button type="button" onClick={onDownload} className="btn btn-primary mt-5 w-full !py-2.5 text-sm"><Download className="size-4" aria-hidden /> {anexo ? "Baixar certificado" : "Baixar certificado (PDF)"}</button>
+      </div>
     </div>
   );
 }
 
 /* ---------------- Cursos ---------------- */
-function Cursos() {
+function Cursos({ disponiveis }: { disponiveis: Curso[] }) {
+  if (disponiveis.length === 0) {
+    return <Panel><p className="text-sm text-ink-soft">Você já está inscrito ou concluiu todos os cursos disponíveis no momento.</p></Panel>;
+  }
   return (
     <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
       {disponiveis.map((curso) => {
@@ -358,9 +374,7 @@ function Cursos() {
               {turma ? <span className="flex items-center gap-1"><CalendarDays className="size-3.5 text-moss" aria-hidden /> {formatShortDate(turma.encontros[0].data)}</span> : null}
               {turma ? <span className="flex items-center gap-1"><UserRound className="size-3.5 text-moss" aria-hidden /> {vagasRestantes(turma)} vagas</span> : null}
             </div>
-            <Link href="/#inscricao" className="btn btn-light mt-5 w-full !py-2 text-sm">
-              Fazer pré-inscrição <ArrowRight className="size-4" aria-hidden />
-            </Link>
+            <Link href="/#inscricao" className="btn btn-light mt-5 w-full !py-2 text-sm">Fazer pré-inscrição <ArrowRight className="size-4" aria-hidden /></Link>
           </div>
         );
       })}
@@ -369,14 +383,14 @@ function Cursos() {
 }
 
 /* ---------------- Dados ---------------- */
-function Dados() {
+function Dados({ aluno }: { aluno: Aluno }) {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <Panel title="Dados pessoais">
         <dl className="grid gap-4 sm:grid-cols-2">
           <Info label="Nome completo" value={aluno.nome} />
           <Info label="CPF" value={aluno.cpf} />
-          <Info label="Data de nascimento" value={formatFullDate(aluno.dataNascimento)} />
+          <Info label="Data de nascimento" value={aluno.dataNascimento ? formatFullDate(aluno.dataNascimento) : "Não informado"} />
           <Info label="Categoria" value={categoriaLabels[aluno.categoria]} />
           <Info label="WhatsApp" value={aluno.telefone} icon={Phone} />
           <Info label="E-mail" value={aluno.email ?? "Não informado"} icon={Mail} />
@@ -391,9 +405,7 @@ function Dados() {
           <Info label="CAR" value={aluno.propriedade.car ?? "Não informado"} />
           <Info label="Associado" value={aluno.associado ? "Sim" : "Não"} />
         </dl>
-        <button type="button" className="btn btn-primary mt-6 !py-2.5 text-sm">
-          Atualizar dados
-        </button>
+        <button type="button" className="btn btn-primary mt-6 !py-2.5 text-sm">Atualizar dados</button>
       </Panel>
     </div>
   );
@@ -403,10 +415,7 @@ function Info({ label, value, icon: Icon }: { label: string; value: string; icon
   return (
     <div>
       <dt className="text-xs font-bold uppercase tracking-wide text-ink-soft">{label}</dt>
-      <dd className="mt-0.5 flex items-center gap-1.5 font-semibold text-pine">
-        {Icon ? <Icon className="size-4 text-moss" aria-hidden /> : null}
-        {value}
-      </dd>
+      <dd className="mt-0.5 flex items-center gap-1.5 font-semibold text-pine">{Icon ? <Icon className="size-4 text-moss" aria-hidden /> : null}{value}</dd>
     </div>
   );
 }
