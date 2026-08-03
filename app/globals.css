@@ -1,78 +1,294 @@
 @import "tailwindcss";
 
-:root {
-  --background: #f7faf8;
-  --foreground: #10231b;
-  --muted: #5e6d65;
-  --line: #dbe8df;
-  --primary: #087a3d;
-  --primary-dark: #045f31;
-  --teal: #0b6f67;
-  --blue: #1769aa;
-  --gold: #c98617;
-  --danger: #b13d2f;
+/* ============================================================
+   Guava Campo — Design System
+   "Agrarian Editorial": warm paper base, deep pine greens,
+   harvest gold + guava-coral signature. Fraunces + Hanken Grotesk.
+   ============================================================ */
+
+@theme {
+  /* Typography */
+  --font-sans: var(--ff-body), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-display: var(--ff-display), ui-serif, Georgia, "Times New Roman", serif;
+
+  /* Brand — greens */
+  --color-pine: #12281c;        /* darkest ink-green */
+  --color-forest: #1b4332;      /* primary deep green */
+  --color-moss: #2d6a4f;        /* mid green */
+  --color-leaf: #40916c;        /* bright leaf accent */
+  --color-sage: #74a892;        /* muted green */
+  --color-mist: #cfe3d6;        /* pale green line */
+
+  /* Warm accents */
+  --color-harvest: #d8a13a;     /* harvest gold */
+  --color-harvest-deep: #b47e20;
+  --color-guava: #d1495b;       /* guava-coral signature */
+  --color-guava-soft: #e8a6a0;
+  --color-clay: #c26a3d;        /* terracotta */
+
+  /* Surfaces (warm paper) */
+  --color-paper: #f6f1e7;       /* page base */
+  --color-paper-2: #efe7d7;     /* deeper paper */
+  --color-cream: #fbf8f1;       /* raised cards */
+  --color-ink: #1a2620;         /* body text */
+  --color-ink-soft: #4a5b52;    /* secondary text */
+  --color-line: #e2d9c6;        /* warm hairline on paper */
+
+  --radius-card: 18px;
+
+  --shadow-soft: 0 1px 2px rgba(18, 40, 28, 0.04), 0 8px 24px -12px rgba(18, 40, 28, 0.18);
+  --shadow-lift: 0 2px 6px rgba(18, 40, 28, 0.06), 0 24px 48px -20px rgba(18, 40, 28, 0.28);
 }
 
+/* ---- Base ---- */
 * {
   box-sizing: border-box;
 }
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   min-height: 100vh;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv01";
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-button,
-input,
-select {
+::selection {
+  background: var(--color-forest);
+  color: #fff;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 560;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+  color: var(--color-pine);
+}
+
+button, input, select, textarea {
   font: inherit;
 }
 
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible {
-  outline: 3px solid rgba(23, 105, 170, 0.35);
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-leaf) 55%, transparent);
   outline-offset: 2px;
+  border-radius: 4px;
 }
 
-.surface {
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 12px 30px rgba(16, 35, 27, 0.08);
+/* ---- Paper texture: subtle grain over everything ---- */
+.grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
 }
 
-.tight-grid {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+/* ---- Eyebrow / kicker ---- */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-moss);
 }
 
+.eyebrow::before {
+  content: "";
+  width: 1.6rem;
+  height: 2px;
+  background: var(--color-harvest);
+}
+
+.eyebrow.no-rule::before {
+  display: none;
+}
+
+/* ---- Field inputs ---- */
 .field-input {
   width: 100%;
-  border-radius: 6px;
-  border: 1px solid var(--line);
-  background: #ffffff;
-  padding: 0.85rem 0.95rem;
-  color: var(--foreground);
+  border-radius: 12px;
+  border: 1px solid var(--color-line);
+  background: #fff;
+  padding: 0.8rem 0.95rem;
+  color: var(--color-ink);
   font-size: 1rem;
-  outline: none;
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.field-input::placeholder {
+  color: color-mix(in srgb, var(--color-ink-soft) 70%, transparent);
 }
 
 .field-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(8, 122, 61, 0.12);
+  outline: none;
+  border-color: var(--color-leaf);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-leaf) 16%, transparent);
 }
 
-@media (max-width: 760px) {
-  body {
-    background: var(--background);
-  }
+/* ---- Buttons ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 0.85rem 1.4rem;
+  transition: transform 140ms ease, background-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: var(--color-forest);
+  color: #fbf8f1;
+  box-shadow: var(--shadow-soft);
+}
+
+.btn-primary:hover {
+  background: var(--color-pine);
+}
+
+.btn-gold {
+  background: var(--color-harvest);
+  color: var(--color-pine);
+  box-shadow: var(--shadow-soft);
+}
+
+.btn-gold:hover {
+  background: var(--color-harvest-deep);
+  color: #fff;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-forest);
+  border: 1px solid color-mix(in srgb, var(--color-forest) 30%, transparent);
+}
+
+.btn-ghost:hover {
+  background: color-mix(in srgb, var(--color-forest) 8%, transparent);
+}
+
+.btn-light {
+  background: var(--color-cream);
+  color: var(--color-forest);
+  border: 1px solid var(--color-line);
+}
+
+.btn-light:hover {
+  background: #fff;
+  border-color: var(--color-mist);
+}
+
+/* ---- Card ---- */
+.card {
+  background: var(--color-cream);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+}
+
+.card-soft {
+  box-shadow: var(--shadow-soft);
+}
+
+/* ---- Chips / badges ---- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* ---- Contour decoration (topographic lines) ---- */
+.contour-bg {
+  background-image: repeating-radial-gradient(
+    circle at 30% 20%,
+    color-mix(in srgb, var(--color-moss) 8%, transparent) 0 1px,
+    transparent 1px 34px
+  );
+}
+
+/* ---- Reveal on load (staggered) ---- */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.reveal {
+  opacity: 0;
+  animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { animation: none; opacity: 1; }
+  html { scroll-behavior: auto; }
+}
+
+/* ---- Underline flourish on nav ---- */
+.nav-link {
+  position: relative;
+  font-weight: 600;
+  color: var(--color-ink-soft);
+  transition: color 160ms ease;
+}
+
+.nav-link:hover {
+  color: var(--color-forest);
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  height: 2px;
+  width: 0;
+  background: var(--color-harvest);
+  transition: width 200ms ease;
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+/* ---- Scrollbar (webkit) ---- */
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: var(--color-paper-2); }
+::-webkit-scrollbar-thumb {
+  background: var(--color-sage);
+  border-radius: 999px;
+  border: 3px solid var(--color-paper-2);
 }
