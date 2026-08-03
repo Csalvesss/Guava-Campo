@@ -1,14 +1,14 @@
-# Guava Campo
+# Sindicato Rural de São José dos Campos
 
-Plataforma de gestão de cursos do SENAR para sindicatos rurais. Esta primeira versão foi preparada para o **Sindicato Rural de São José dos Campos**, com portal do aluno, painel operacional e base Firebase.
+Site público de cursos SENAR mobilizados pelo **Sindicato Rural de São José dos Campos**, com pré-inscrição online, área do aluno e estrutura inicial para evolução operacional com Firebase.
 
 ## O que já está nesta entrega
 
 - App Next.js com TypeScript e Tailwind.
-- Portal do aluno com catálogo, trava de curso único por CPF e inscrição/lista de espera simulada.
-- Painel do sindicato com fila por prioridade SENAR, confirmação de inscrição e liberação de grupo WhatsApp.
-- Frequência e certificação com regra de 80% + aprovação do instrutor.
-- Visão Guava Admin com inquilino, plano, slug e mapa de cobertura.
+- Página pública institucional para apresentar cursos, eventos e capacitações.
+- Catálogo de cursos com seleção de turma e pré-inscrição.
+- Área do aluno preparada para consulta de inscrições, grupos e certificados.
+- Regras simuladas de prioridade, confirmação de vaga, frequência e certificação.
 - Firebase configurado para Auth, Firestore, Storage, Functions e Analytics.
 - Regras iniciais de Firestore/Storage com isolamento por `sindicatoId`.
 - Configuração pronta para conectar o repositório ao Netlify.

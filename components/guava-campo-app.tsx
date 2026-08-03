@@ -1,27 +1,31 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
-  ArrowRight,
   BadgeCheck,
-  BookOpen,
+  Building2,
   CalendarDays,
   CheckCircle2,
   ClipboardCheck,
+  ClipboardList,
   Clock,
   FileCheck2,
   GraduationCap,
+  KeyRound,
+  LayoutDashboard,
+  LockKeyhole,
   MapPin,
   MessageCircle,
   Phone,
+  Search,
   ShieldCheck,
-  Sparkles,
+  UserCheck,
   UserRound,
   UsersRound,
 } from "lucide-react";
-import { getEnrollmentBlock, prioridadePorCategoria, turmaTemVaga } from "@/lib/business-rules";
-import { alunos, cursos, inscricoes, sindicato, turmas } from "@/lib/seed";
+import { prioridadePorCategoria, turmaTemVaga } from "@/lib/business-rules";
+import { cursos, inscricoes, sindicato, turmas } from "@/lib/seed";
 import { categoriaLabels, type CategoriaAluno } from "@/lib/types";
 
 type FormState = {
@@ -31,6 +35,8 @@ type FormState = {
   categoria: CategoriaAluno;
 };
 
+type AccessType = "aluno" | "sindicato";
+
 const initialForm: FormState = {
   nome: "",
   cpf: "",
@@ -38,7 +44,61 @@ const initialForm: FormState = {
   categoria: "produtor",
 };
 
-function formatDate(value: string) {
+const accessDetails = {
+  aluno: {
+    eyebrow: "Área do aluno",
+    title: "Consulte sua inscrição e seus certificados.",
+    description:
+      "Acesso para o participante acompanhar pedidos, confirmações, grupos de turma e certificados emitidos.",
+    userLabel: "CPF",
+    userPlaceholder: "000.000.000-00",
+    passwordLabel: "Data de nascimento",
+    passwordPlaceholder: "dd/mm/aaaa",
+    button: "Entrar na área do aluno",
+    features: [
+      { icon: ClipboardCheck, title: "Inscrições", text: "Status do pedido e posição na fila." },
+      { icon: MessageCircle, title: "Grupos", text: "WhatsApp liberado após confirmação." },
+      { icon: BadgeCheck, title: "Certificados", text: "Documentos disponíveis para baixar." },
+      { icon: UserCheck, title: "Dados", text: "Atualização de contato e categoria." },
+    ],
+  },
+  sindicato: {
+    eyebrow: "Área do sindicato",
+    title: "Gerencie turmas, inscrições e presença.",
+    description:
+      "Acesso restrito para a equipe do sindicato rural organizar mobilização, aprovar vagas e acompanhar cursos.",
+    userLabel: "E-mail institucional",
+    userPlaceholder: "contato@sindicatorural.com.br",
+    passwordLabel: "Senha",
+    passwordPlaceholder: "Digite sua senha",
+    button: "Entrar na área do sindicato",
+    features: [
+      { icon: ClipboardList, title: "Pré-inscrições", text: "Fila por prioridade e documentação." },
+      { icon: LayoutDashboard, title: "Turmas", text: "Agenda, vagas e status operacional." },
+      { icon: UsersRound, title: "Frequência", text: "Lista de presença e aprovação." },
+      { icon: FileCheck2, title: "Certificados", text: "Liberação e histórico dos alunos." },
+    ],
+  },
+} satisfies Record<
+  AccessType,
+  {
+    eyebrow: string;
+    title: string;
+    description: string;
+    userLabel: string;
+    userPlaceholder: string;
+    passwordLabel: string;
+    passwordPlaceholder: string;
+    button: string;
+    features: {
+      icon: typeof ClipboardCheck;
+      title: string;
+      text: string;
+    }[];
+  }
+>;
+
+function formatShortDate(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "short",
@@ -59,55 +119,16 @@ function getTurmaForCourse(courseId: string) {
   return turmas.find((turma) => turma.cursoId === courseId && turma.publicadaNoPortal) ?? turmas[0];
 }
 
-function LogoMark() {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="flex size-16 shrink-0 items-center justify-center rounded-md border border-[#d9e8de] bg-white p-1.5 shadow-sm sm:size-20">
-        <Image
-          src="/sindicato-sjc.png"
-          alt={sindicato.nome}
-          width={88}
-          height={88}
-          priority
-          className="h-full w-full object-contain"
-        />
-      </div>
-      <div className="min-w-0">
-        <p className="text-xs font-bold uppercase text-[var(--primary)] sm:text-sm">
-          Sindicato Rural
-        </p>
-        <p className="text-lg font-extrabold leading-tight text-[var(--foreground)] sm:text-2xl">
-          São José dos Campos
-        </p>
-      </div>
-    </div>
-  );
-}
-
 export function GuavaCampoApp() {
   const [selectedCourseId, setSelectedCourseId] = useState(cursos[0].id);
+  const [accessType, setAccessType] = useState<AccessType>("aluno");
   const [form, setForm] = useState<FormState>(initialForm);
   const [submitted, setSubmitted] = useState(false);
 
   const selectedCourse = cursos.find((curso) => curso.id === selectedCourseId) ?? cursos[0];
   const selectedTurma = getTurmaForCourse(selectedCourse.id);
-  const alunoDemo = alunos[0];
-  const enrollmentBlock = getEnrollmentBlock(alunoDemo, selectedCourse, inscricoes);
   const hasSeat = turmaTemVaga(selectedTurma, inscricoes);
-
-  const stats = useMemo(() => {
-    const abertas = turmas.filter((turma) => turma.publicadaNoPortal).length;
-    const vagas = turmas.reduce(
-      (total, turma) => total + Math.max(turma.capacidade - turma.vagasPreenchidas, 0),
-      0,
-    );
-
-    return [
-      { label: "Cursos com inscrições", value: cursos.filter((curso) => curso.ativo).length },
-      { label: "Turmas em mobilização", value: abertas },
-      { label: "Vagas disponíveis", value: vagas },
-    ];
-  }, []);
+  const activeAccess = accessDetails[accessType];
 
   function updateField<Key extends keyof FormState>(key: Key, value: FormState[Key]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -120,28 +141,81 @@ export function GuavaCampoApp() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f6faf7] text-[var(--foreground)]">
-      <header className="sticky top-0 z-30 border-b border-[#dce8df] bg-white/92 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-          <LogoMark />
-          <nav className="hidden items-center gap-7 text-sm font-semibold text-[#4d6257] md:flex">
-            <a href="#cursos" className="transition hover:text-[var(--primary)]">
+    <main className="min-h-screen bg-[#f7faf8] text-[var(--foreground)]">
+      <header className="sticky top-0 z-40 border-b border-[#d7e5db] bg-white/95 shadow-sm backdrop-blur">
+        <div className="bg-[var(--primary-dark)] text-white">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2 text-xs font-semibold sm:px-6 lg:px-8">
+            <span>SENAR-SP • Mobilização de cursos rurais</span>
+            <a href="tel:+551239000000" className="hidden items-center gap-2 sm:inline-flex">
+              <Phone className="size-3.5" aria-hidden />
+              Atendimento do sindicato
+            </a>
+          </div>
+        </div>
+
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+          <a href="#" className="flex min-w-0 items-center gap-4" aria-label="Início">
+            <div className="flex size-16 shrink-0 items-center justify-center rounded-md border border-[#d7e5db] bg-white p-2 shadow-sm sm:size-24">
+              <Image
+                src="/sindicato-sjc.png"
+                alt={sindicato.nome}
+                width={96}
+                height={96}
+                priority
+                className="h-full w-full object-contain"
+              />
+            </div>
+            <div className="hidden min-w-0 sm:block">
+              <p className="text-sm font-extrabold uppercase text-[var(--primary)]">
+                Sindicato Rural
+              </p>
+              <p className="whitespace-nowrap text-xl font-black leading-tight tracking-normal text-[var(--foreground)] xl:text-2xl">
+                São José dos Campos
+              </p>
+            </div>
+          </a>
+
+          <nav className="hidden items-center gap-6 text-sm font-bold text-[#4b6256] lg:flex xl:gap-8">
+            <a href="#cursos" className="whitespace-nowrap transition hover:text-[var(--primary)]">
               Cursos
             </a>
-            <a href="#inscricao" className="transition hover:text-[var(--primary)]">
+            <a href="#inscricao" className="whitespace-nowrap transition hover:text-[var(--primary)]">
               Inscrição
             </a>
-            <a href="#como-funciona" className="transition hover:text-[var(--primary)]">
+            <a href="#acessos" className="whitespace-nowrap transition hover:text-[var(--primary)]">
+              Acessos
+            </a>
+            <a href="#como-funciona" className="whitespace-nowrap transition hover:text-[var(--primary)]">
               Como funciona
             </a>
           </nav>
-          <a
-            href="#inscricao"
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-[var(--primary)] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[var(--primary-dark)]"
-          >
-            Inscrever-se
-            <ArrowRight className="size-4" aria-hidden />
-          </a>
+
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap sm:justify-end sm:gap-3">
+            <a
+              href="#acessos"
+              onClick={() => setAccessType("aluno")}
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-[var(--primary)] bg-white px-3 py-2.5 text-sm font-extrabold text-[var(--primary)] transition hover:bg-[#edf8f1] sm:px-4"
+            >
+              <UserRound className="size-4" aria-hidden />
+              <span className="hidden 2xl:inline">Área do aluno</span>
+              <span className="2xl:hidden">Aluno</span>
+            </a>
+            <a
+              href="#acessos"
+              onClick={() => setAccessType("sindicato")}
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-[var(--primary)] bg-white px-3 py-2.5 text-sm font-extrabold text-[var(--primary)] transition hover:bg-[#edf8f1] sm:px-4"
+            >
+              <Building2 className="size-4" aria-hidden />
+              <span className="hidden 2xl:inline">Área do sindicato</span>
+              <span className="2xl:hidden">Sindicato</span>
+            </a>
+            <a
+              href="#inscricao"
+              className="inline-flex items-center justify-center rounded-md bg-[var(--primary)] px-4 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-[var(--primary-dark)] sm:px-5"
+            >
+              Inscreva-se
+            </a>
+          </div>
         </div>
       </header>
 
@@ -149,51 +223,53 @@ export function GuavaCampoApp() {
         <div className="absolute inset-0">
           <Image
             src="/hero-cursos-senar.png"
-            alt="Curso rural em campo aberto"
+            alt="Capacitação rural em campo"
             fill
             priority
             className="object-cover"
             sizes="100vw"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#07351f] via-[#07351f]/78 to-[#07351f]/16" />
-          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#f6faf7] to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#07351f] via-[#07351f]/82 to-[#07351f]/18" />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#f7faf8] to-transparent" />
         </div>
 
-        <div className="relative mx-auto grid min-h-[680px] max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,0.92fr)_430px] lg:px-8">
-          <div className="max-w-3xl pt-10 text-white">
-            <div className="inline-flex items-center gap-2 rounded-md bg-white/12 px-3 py-2 text-sm font-bold ring-1 ring-white/20 backdrop-blur">
+        <div className="relative mx-auto grid min-h-[560px] max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,0.95fr)_390px] lg:px-8">
+          <div className="max-w-3xl text-white">
+            <div className="inline-flex items-center gap-2 rounded-md bg-white/12 px-3 py-2 text-sm font-extrabold ring-1 ring-white/20 backdrop-blur">
               <GraduationCap className="size-4" aria-hidden />
-              Cursos SENAR mobilizados pelo sindicato
+              Cursos presenciais do SENAR-SP
             </div>
-            <h1 className="mt-6 text-4xl font-black leading-[1.03] tracking-normal sm:text-6xl lg:text-7xl">
-              Capacitação rural para produtores de São José dos Campos
+            <h1 className="mt-6 text-4xl font-black leading-[1.03] tracking-normal sm:text-5xl lg:text-6xl">
+              Cursos rurais com inscrição pelo Sindicato Rural de São José dos Campos
             </h1>
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-white/88 sm:text-xl">
-              Consulte as próximas turmas, faça sua pré-inscrição e acompanhe a confirmação
-              da sua vaga diretamente pelo Sindicato Rural de São José dos Campos.
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-white/90 sm:text-xl">
+              Veja as próximas turmas, escolha sua capacitação e envie seus dados para
+              análise da equipe de mobilização do sindicato.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
                 href="#cursos"
-                className="inline-flex items-center justify-center gap-2 rounded-md bg-white px-5 py-3 text-base font-extrabold text-[var(--primary-dark)] shadow-sm transition hover:bg-[#eff8f2]"
+                className="inline-flex items-center justify-center rounded-md bg-white px-5 py-3 text-base font-black text-[var(--primary-dark)] shadow-sm transition hover:bg-[#eff8f2]"
               >
                 Ver cursos disponíveis
-                <ArrowRight className="size-5" aria-hidden />
               </a>
               <a
-                href="tel:+551239000000"
+                href="#acessos"
+                onClick={() => setAccessType("aluno")}
                 className="inline-flex items-center justify-center gap-2 rounded-md border border-white/35 bg-white/10 px-5 py-3 text-base font-bold text-white backdrop-blur transition hover:bg-white/18"
               >
-                <Phone className="size-5" aria-hidden />
-                Falar com o sindicato
+                <UserRound className="size-5" aria-hidden />
+                Entrar como aluno
               </a>
             </div>
           </div>
 
-          <aside className="rounded-lg border border-white/18 bg-white p-5 shadow-2xl">
-            <div className="flex items-center justify-between gap-4 border-b border-[#dfeae3] pb-4">
+          <aside className="rounded-md border border-white/18 bg-white p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-[#dfeae3] pb-4">
               <div>
-                <p className="text-sm font-bold uppercase text-[var(--primary)]">Próxima turma</p>
+                <p className="text-sm font-extrabold uppercase text-[var(--primary)]">
+                  Destaque da semana
+                </p>
                 <h2 className="mt-1 text-2xl font-black tracking-normal">{selectedCourse.nome}</h2>
               </div>
               <Image
@@ -223,86 +299,96 @@ export function GuavaCampoApp() {
 
             <a
               href="#inscricao"
-              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-[var(--primary)] px-5 py-3 text-base font-extrabold text-white transition hover:bg-[var(--primary-dark)]"
+              className="mt-5 inline-flex w-full items-center justify-center rounded-md bg-[var(--primary)] px-5 py-3 text-base font-black text-white transition hover:bg-[var(--primary-dark)]"
             >
-              Quero me inscrever
-              <ArrowRight className="size-5" aria-hidden />
+              Fazer pré-inscrição
             </a>
           </aside>
         </div>
       </section>
 
-      <section className="mx-auto -mt-10 grid max-w-7xl gap-3 px-4 sm:px-6 md:grid-cols-3 lg:px-8">
-        {stats.map((stat) => (
-          <div key={stat.label} className="rounded-lg border border-[#dce8df] bg-white p-5 shadow-sm">
-            <p className="text-sm font-semibold text-[#607369]">{stat.label}</p>
-            <strong className="mt-2 block text-4xl font-black text-[var(--primary-dark)]">
-              {stat.value}
-            </strong>
-          </div>
-        ))}
-      </section>
-
       <section id="cursos" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div>
+            <div className="mb-8 h-1 w-36 bg-[var(--primary)]" />
             <p className="text-sm font-extrabold uppercase text-[var(--primary)]">
-              Inscrições abertas
+              Cursos e capacitações
             </p>
-            <h2 className="mt-2 text-3xl font-black tracking-normal sm:text-4xl">
-              Escolha o curso que faz sentido para sua propriedade
+            <h2 className="mt-2 max-w-3xl text-3xl font-black tracking-normal sm:text-5xl">
+              Confira as próximas turmas oferecidas
             </h2>
           </div>
-          <p className="max-w-xl text-base leading-7 text-[#607369]">
-            A pré-inscrição entra para análise do sindicato. Produtores, familiares e
-            colaboradores rurais têm prioridade conforme as regras do SENAR.
-          </p>
+          <label className="relative block w-full max-w-md">
+            <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-[#789088]" />
+            <input
+              className="w-full rounded-md border border-[#d7e5db] bg-white py-3 pl-12 pr-4 text-base shadow-sm"
+              placeholder="Buscar curso"
+              aria-label="Buscar curso"
+            />
+          </label>
         </div>
 
-        <div className="mt-8 grid gap-4 lg:grid-cols-4">
-          {cursos.map((curso) => {
+        <div className="mt-8 grid gap-5 lg:grid-cols-4">
+          {cursos.map((curso, index) => {
             const turma = getTurmaForCourse(curso.id);
             const selected = selectedCourseId === curso.id;
             const vagas = Math.max(turma.capacidade - turma.vagasPreenchidas, 0);
-            const blocked = getEnrollmentBlock(alunoDemo, curso, inscricoes);
 
             return (
               <article
                 key={curso.id}
-                className={`flex min-h-[330px] flex-col rounded-lg border bg-white p-5 shadow-sm transition ${
+                className={`group overflow-hidden rounded-md border bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl ${
                   selected ? "border-[var(--primary)] ring-4 ring-[#b9e6c9]" : "border-[#dce8df]"
                 }`}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex size-12 items-center justify-center rounded-md bg-[#e7f5eb] text-[var(--primary)]">
-                    <BookOpen className="size-6" aria-hidden />
-                  </div>
-                  <span className="rounded-md bg-[#f1f7f3] px-2.5 py-1 text-xs font-extrabold text-[var(--primary-dark)]">
-                    {curso.tipo}
-                  </span>
-                </div>
-                <p className="mt-5 text-xs font-extrabold uppercase text-[var(--teal)]">
-                  {curso.eixo}
-                </p>
-                <h3 className="mt-2 text-xl font-black leading-tight tracking-normal">{curso.nome}</h3>
-                <p className="mt-3 flex-1 text-sm leading-6 text-[#607369]">{curso.descricao}</p>
-                <div className="mt-5 grid grid-cols-2 gap-2 text-sm">
-                  <span className="rounded-md bg-[#f5f8f6] p-3">
-                    <strong className="block text-lg">{curso.cargaHoraria}h</strong>
-                    Carga
-                  </span>
-                  <span className="rounded-md bg-[#f5f8f6] p-3">
-                    <strong className="block text-lg">{vagas}</strong>
-                    Vagas
-                  </span>
-                </div>
                 <button
                   type="button"
                   onClick={() => setSelectedCourseId(curso.id)}
-                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md border border-[#cfe0d5] px-4 py-3 text-sm font-extrabold transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                  className="block w-full text-left"
                 >
-                  {blocked ? "Ver regra de bloqueio" : "Selecionar curso"}
-                  <ArrowRight className="size-4" aria-hidden />
+                  <div className="relative h-44 overflow-hidden bg-[#123e2a]">
+                    <Image
+                      src="/hero-cursos-senar.png"
+                      alt=""
+                      fill
+                      className="object-cover transition duration-500 group-hover:scale-105"
+                      sizes="(max-width: 1024px) 100vw, 25vw"
+                      style={{ objectPosition: `${20 + index * 18}% center` }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#062d1d]/92 via-[#062d1d]/40 to-transparent" />
+                    <div className="absolute left-4 top-4 rounded-md bg-white/95 px-2.5 py-1 text-xs font-black text-[var(--primary-dark)]">
+                      Presencial
+                    </div>
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <p className="text-xs font-extrabold uppercase text-[#b9e6c9]">
+                        {curso.eixo}
+                      </p>
+                      <h3 className="mt-1 text-xl font-black leading-tight text-white">
+                        {curso.nome}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div className="p-4">
+                    <p className="min-h-[72px] text-sm leading-6 text-[#607369]">{curso.descricao}</p>
+                    <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
+                      <span className="rounded-md bg-[#f4f8f6] p-2">
+                        <strong className="block">{curso.cargaHoraria}h</strong>
+                        Carga
+                      </span>
+                      <span className="rounded-md bg-[#f4f8f6] p-2">
+                        <strong className="block">{vagas}</strong>
+                        Vagas
+                      </span>
+                      <span className="rounded-md bg-[#f4f8f6] p-2">
+                        <strong className="block">{formatShortDate(turma.encontros[0].data)}</strong>
+                        Início
+                      </span>
+                    </div>
+                    <span className="mt-4 inline-flex w-full items-center justify-center rounded-md border border-[#cfe0d5] px-4 py-2.5 text-sm font-black text-[var(--primary)]">
+                      Selecionar
+                    </span>
+                  </div>
                 </button>
               </article>
             );
@@ -310,16 +396,120 @@ export function GuavaCampoApp() {
         </div>
       </section>
 
+      <section id="acessos" className="border-y border-[#dce8df] bg-white py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-5 lg:grid-cols-[0.85fr_1fr] lg:items-end">
+            <div>
+              <p className="text-sm font-extrabold uppercase text-[var(--primary)]">
+                Acessos do portal
+              </p>
+              <h2 className="mt-2 max-w-3xl text-3xl font-black tracking-normal sm:text-5xl">
+                Duas áreas separadas para aluno e sindicato rural
+              </h2>
+            </div>
+            <p className="max-w-2xl text-base leading-7 text-[#607369]">
+              O aluno acompanha a própria inscrição. A equipe do sindicato entra em uma
+              área restrita para organizar turmas, confirmar vagas e registrar frequência.
+            </p>
+          </div>
+
+          <div className="mt-9 grid gap-6 lg:grid-cols-[420px_1fr]">
+            <form
+              onSubmit={(event) => event.preventDefault()}
+              className="rounded-md border border-[#dce8df] bg-[#f7faf8] p-5 shadow-lg shadow-[#153a250c]"
+            >
+              <div
+                className="grid grid-cols-2 gap-1 rounded-md bg-[#e8f2ec] p-1"
+                role="tablist"
+                aria-label="Tipo de acesso"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  onClick={() => setAccessType("aluno")}
+                  aria-selected={accessType === "aluno"}
+                  className={`inline-flex items-center justify-center gap-2 rounded-md px-3 py-3 text-sm font-black transition ${
+                    accessType === "aluno"
+                      ? "bg-white text-[var(--primary-dark)] shadow-sm"
+                      : "text-[#607369] hover:text-[var(--primary)]"
+                  }`}
+                >
+                  <UserRound className="size-4" aria-hidden />
+                  Aluno
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  onClick={() => setAccessType("sindicato")}
+                  aria-selected={accessType === "sindicato"}
+                  className={`inline-flex items-center justify-center gap-2 rounded-md px-3 py-3 text-sm font-black transition ${
+                    accessType === "sindicato"
+                      ? "bg-white text-[var(--primary-dark)] shadow-sm"
+                      : "text-[#607369] hover:text-[var(--primary)]"
+                  }`}
+                >
+                  <Building2 className="size-4" aria-hidden />
+                  Sindicato
+                </button>
+              </div>
+
+              <div className="mt-6">
+                <p className="text-sm font-extrabold uppercase text-[var(--primary)]">
+                  {activeAccess.eyebrow}
+                </p>
+                <h3 className="mt-2 text-2xl font-black tracking-normal">{activeAccess.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-[#607369]">
+                  {activeAccess.description}
+                </p>
+              </div>
+
+              <div className="mt-6 grid gap-4">
+                <Field label={activeAccess.userLabel} icon={accessType === "aluno" ? ShieldCheck : UserRound}>
+                  <input
+                    className="field-input"
+                    placeholder={activeAccess.userPlaceholder}
+                    type={accessType === "aluno" ? "text" : "email"}
+                  />
+                </Field>
+                <Field label={activeAccess.passwordLabel} icon={KeyRound}>
+                  <input
+                    className="field-input"
+                    placeholder={activeAccess.passwordPlaceholder}
+                    type={accessType === "aluno" ? "text" : "password"}
+                  />
+                </Field>
+              </div>
+
+              <button
+                type="submit"
+                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-md bg-[var(--primary)] px-5 py-3.5 text-base font-black text-white transition hover:bg-[var(--primary-dark)]"
+              >
+                <LockKeyhole className="size-5" aria-hidden />
+                {activeAccess.button}
+              </button>
+            </form>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {activeAccess.features.map((feature) => (
+                <AccessFeature key={feature.title} icon={feature.icon} title={feature.title}>
+                  {feature.text}
+                </AccessFeature>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="inscricao" className="bg-white py-16">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(390px,0.62fr)] lg:px-8">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(390px,0.62fr)] lg:px-8">
           <div>
             <p className="text-sm font-extrabold uppercase text-[var(--primary)]">
               Pré-inscrição
             </p>
-            <h2 className="mt-2 text-3xl font-black tracking-normal sm:text-4xl">
+            <h2 className="mt-2 max-w-3xl text-3xl font-black tracking-normal sm:text-5xl">
               Informe seus dados para o sindicato confirmar sua vaga
             </h2>
-            <div className="mt-7 rounded-lg border border-[#dce8df] bg-[#f7faf8] p-5">
+            <div className="mt-7 rounded-md border border-[#dce8df] bg-[#f7faf8] p-5">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="text-sm font-extrabold uppercase text-[var(--teal)]">
@@ -327,22 +517,17 @@ export function GuavaCampoApp() {
                   </p>
                   <h3 className="mt-1 text-2xl font-black">{selectedCourse.nome}</h3>
                   <p className="mt-2 text-[#607369]">
-                    {selectedTurma.local} · {formatDate(selectedTurma.encontros[0].data)} a{" "}
-                    {formatDate(selectedTurma.encontros[selectedTurma.encontros.length - 1].data)}
+                    {selectedTurma.local} · {formatShortDate(selectedTurma.encontros[0].data)} a{" "}
+                    {formatShortDate(selectedTurma.encontros[selectedTurma.encontros.length - 1].data)}
                   </p>
                 </div>
                 <span className="rounded-md bg-white px-3 py-2 text-sm font-extrabold text-[var(--primary-dark)] shadow-sm">
                   Prioridade {prioridadePorCategoria(form.categoria)}
                 </span>
               </div>
-              {enrollmentBlock ? (
-                <div className="mt-5 rounded-md border border-[#ead7a7] bg-[#fff8e8] p-4 text-sm font-semibold text-[#80550b]">
-                  Exemplo de regra ativa: {enrollmentBlock}
-                </div>
-              ) : null}
             </div>
 
-            <div id="como-funciona" className="mt-8 grid gap-3 sm:grid-cols-3">
+            <div id="como-funciona" className="mt-8 grid gap-4 sm:grid-cols-3">
               <Step icon={ClipboardCheck} title="1. Pré-inscrição">
                 O sindicato recebe seus dados e organiza a fila por prioridade SENAR.
               </Step>
@@ -357,14 +542,14 @@ export function GuavaCampoApp() {
 
           <form
             onSubmit={handleSubmit}
-            className="rounded-lg border border-[#dce8df] bg-white p-5 shadow-xl shadow-[#153a2510]"
+            className="rounded-md border border-[#dce8df] bg-white p-5 shadow-xl shadow-[#153a2510]"
           >
             <div className="flex items-center gap-3 border-b border-[#dce8df] pb-4">
-              <div className="flex size-11 items-center justify-center rounded-md bg-[#e7f5eb] text-[var(--primary)]">
+              <div className="flex size-12 items-center justify-center rounded-md bg-[#e7f5eb] text-[var(--primary)]">
                 <FileCheck2 className="size-6" aria-hidden />
               </div>
               <div>
-                <h3 className="text-xl font-black">Solicitar inscrição</h3>
+                <h3 className="text-2xl font-black">Solicitar inscrição</h3>
                 <p className="text-sm text-[#607369]">Resposta após análise do sindicato.</p>
               </div>
             </div>
@@ -415,10 +600,9 @@ export function GuavaCampoApp() {
 
             <button
               type="submit"
-              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-md bg-[var(--primary)] px-5 py-3.5 text-base font-black text-white transition hover:bg-[var(--primary-dark)]"
+              className="mt-6 inline-flex w-full items-center justify-center rounded-md bg-[var(--primary)] px-5 py-3.5 text-base font-black text-white transition hover:bg-[var(--primary-dark)]"
             >
               Enviar pré-inscrição
-              <ArrowRight className="size-5" aria-hidden />
             </button>
 
             {submitted ? (
@@ -431,26 +615,6 @@ export function GuavaCampoApp() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid gap-4 rounded-lg border border-[#dce8df] bg-[#0c3d28] p-6 text-white md:grid-cols-[1fr_auto] md:items-center md:p-8">
-          <div>
-            <p className="inline-flex items-center gap-2 text-sm font-extrabold uppercase text-[#b9e6c9]">
-              <Sparkles className="size-4" aria-hidden />
-              Mobilização rural organizada
-            </p>
-            <h2 className="mt-2 text-3xl font-black tracking-normal">
-              O sindicato acompanha inscrições, presença e certificados em um só fluxo.
-            </h2>
-          </div>
-          <Image
-            src="/senar-sp.png"
-            alt="SENAR São Paulo"
-            width={96}
-            height={96}
-            className="size-24 rounded-md bg-white object-contain p-2"
-          />
-        </div>
-      </section>
     </main>
   );
 }
@@ -485,9 +649,29 @@ function Step({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-[#dce8df] bg-white p-4">
-      <Icon className="size-6 text-[var(--primary)]" aria-hidden />
-      <h3 className="mt-3 font-black">{title}</h3>
+    <div className="rounded-md border border-[#dce8df] bg-white p-5">
+      <Icon className="size-7 text-[var(--primary)]" aria-hidden />
+      <h3 className="mt-4 text-lg font-black">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-[#607369]">{children}</p>
+    </div>
+  );
+}
+
+function AccessFeature({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: typeof ClipboardCheck;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-md border border-[#dce8df] bg-[#f7faf8] p-5">
+      <div className="flex size-11 items-center justify-center rounded-md bg-white text-[var(--primary)] shadow-sm">
+        <Icon className="size-5" aria-hidden />
+      </div>
+      <h3 className="mt-4 text-lg font-black">{title}</h3>
       <p className="mt-2 text-sm leading-6 text-[#607369]">{children}</p>
     </div>
   );
