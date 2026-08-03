@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import {
-  ArrowRight,
   Award,
   BadgeCheck,
   BookOpen,
@@ -113,7 +112,7 @@ export function AlunoDashboard() {
           onNavigate={setActive}
         />
       ) : null}
-      {active === "inscricoes" ? <Inscricoes minhasInscricoes={minhasInscricoes} turmas={store.turmas} /> : null}
+      {active === "inscricoes" ? <Inscricoes minhasInscricoes={minhasInscricoes} turmas={store.turmas} onNavigate={setActive} /> : null}
       {active === "certificados" ? <Certificados certificados={meusCertificados} concluidos={concluidos} aluno={aluno} /> : null}
       {active === "cursos" ? <Cursos disponiveis={disponiveis} /> : null}
       {active === "dados" ? <Dados aluno={aluno} /> : null}
@@ -197,7 +196,7 @@ function Painel({
               </li>
             ))}
           </ul>
-          <button type="button" onClick={() => onNavigate("cursos")} className="btn btn-light mt-4 w-full !py-2 text-sm">Ver todos os cursos <ArrowRight className="size-4" aria-hidden /></button>
+          <button type="button" onClick={() => onNavigate("cursos")} className="btn btn-light mt-4 w-full !py-2 text-sm">Ver todos os cursos</button>
         </Panel>
       </div>
 
@@ -209,10 +208,10 @@ function Painel({
             {minhasInscricoes.map((insc) => {
               const turma = turmas.find((t) => t.id === insc.turmaId);
               return (
-                <div key={insc.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-paper px-4 py-3">
+                <button key={insc.id} type="button" onClick={() => onNavigate(["concluida"].includes(insc.status) ? "certificados" : "inscricoes")} className="flex w-full flex-wrap items-center justify-between gap-3 rounded-xl bg-paper-2 px-4 py-3 text-left transition hover:bg-mist/40">
                   <div className="min-w-0"><p className="truncate font-semibold text-pine">{turma?.cursoNome}</p><p className="text-xs text-ink-soft">{turma ? periodoTurma(turma) : ""} · {turma?.local}</p></div>
                   <InscricaoBadge status={insc.status} />
-                </div>
+                </button>
               );
             })}
           </div>
@@ -223,7 +222,7 @@ function Painel({
 }
 
 /* ---------------- Inscrições ---------------- */
-function Inscricoes({ minhasInscricoes, turmas }: { minhasInscricoes: Inscricao[]; turmas: Turma[] }) {
+function Inscricoes({ minhasInscricoes, turmas, onNavigate }: { minhasInscricoes: Inscricao[]; turmas: Turma[]; onNavigate: (id: string) => void }) {
   if (minhasInscricoes.length === 0) {
     return <Panel><p className="text-sm text-ink-soft">Você ainda não tem inscrições.</p></Panel>;
   }
@@ -244,10 +243,15 @@ function Inscricoes({ minhasInscricoes, turmas }: { minhasInscricoes: Inscricao[
                 <h3 className="mt-2 font-display text-xl font-semibold text-pine">{curso.nome}</h3>
                 <div className="mt-2 grid gap-1.5 text-sm text-ink-soft sm:grid-cols-2">
                   <p className="flex items-center gap-2"><CalendarDays className="size-4 text-forest" aria-hidden /> {periodoTurma(turma)}</p>
-                  <p className="flex items-center gap-2"><MapPin className="size-4 text-forest" aria-hidden /> {turma.local}</p>
+                  <p className="flex items-center gap-2"><MapPin className="size-4 text-forest" aria-hidden /> {turma.endereco || turma.local}</p>
                   <p className="flex items-center gap-2"><Clock className="size-4 text-forest" aria-hidden /> {curso.cargaHoraria} horas</p>
                   <p className="flex items-center gap-2"><ShieldCheck className="size-4 text-forest" aria-hidden /> Prioridade {insc.prioridade}</p>
                 </div>
+                {turma.mapsUrl ? (
+                  <a href={turma.mapsUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-forest hover:underline">
+                    <MapPin className="size-4" aria-hidden /> Ver no mapa
+                  </a>
+                ) : null}
               </div>
               <div className="shrink-0"><InscricaoBadge status={insc.status} /></div>
             </div>
@@ -272,6 +276,11 @@ function Inscricoes({ minhasInscricoes, turmas }: { minhasInscricoes: Inscricao[
                 <span className="chip bg-paper-2 text-ink-soft">Grupo liberado após confirmação</span>
               )}
               {insc.status === "pendente" ? <span className="chip bg-harvest/15 text-harvest-deep">Aguardando confirmação do sindicato</span> : null}
+              {insc.status === "concluida" ? (
+                <button type="button" onClick={() => onNavigate("certificados")} className="btn btn-primary !py-2 text-sm">
+                  <BadgeCheck className="size-4" aria-hidden /> Ver meu certificado
+                </button>
+              ) : null}
             </div>
           </Panel>
         );
@@ -374,7 +383,7 @@ function Cursos({ disponiveis }: { disponiveis: Curso[] }) {
               {turma ? <span className="flex items-center gap-1"><CalendarDays className="size-3.5 text-moss" aria-hidden /> {formatShortDate(turma.encontros[0].data)}</span> : null}
               {turma ? <span className="flex items-center gap-1"><UserRound className="size-3.5 text-moss" aria-hidden /> {vagasRestantes(turma)} vagas</span> : null}
             </div>
-            <Link href="/#inscricao" className="btn btn-light mt-5 w-full !py-2 text-sm">Fazer pré-inscrição <ArrowRight className="size-4" aria-hidden /></Link>
+            <Link href="/#inscricao" className="btn btn-light mt-5 w-full !py-2 text-sm">Fazer pré-inscrição</Link>
           </div>
         );
       })}

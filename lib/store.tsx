@@ -22,9 +22,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { prioridadePorCategoria } from "./business-rules";
+import { getEnrollmentBlock, prioridadePorCategoria } from "./business-rules";
 import {
   alunos as alunosSeed,
+  cursos,
   inscricoes as inscricoesSeed,
   turmas as turmasSeed,
 } from "./seed";
@@ -56,15 +57,33 @@ export type NovaTurmaInput = {
   cursoId: string;
   cursoNome: string;
   local: string;
+  endereco: string | null;
+  mapsUrl: string | null;
   municipio: string;
   instrutorId: string | null;
   instrutorNome: string | null;
   capacidade: number;
   encontros: { data: string; cargaHoraria: number }[];
   status: Turma["status"];
+  confirmacaoAutomatica: boolean;
   numeroOficio: string | null;
   whatsappGrupoUrl: string | null;
   supervisorSenar: { nome: string; contato: string } | null;
+};
+
+export type InscricaoPublicaInput = {
+  nome: string;
+  cpf: string;
+  telefone: string;
+  categoria: CategoriaAluno;
+  cursoId: string;
+};
+
+export type InscricaoPublicaResultado = {
+  ok: boolean;
+  status: InscricaoStatus | null;
+  titulo: string;
+  mensagem: string;
 };
 
 export type NovoAlunoInput = {
@@ -90,6 +109,7 @@ type StoreValue = PersistedState & {
   ) => void;
   addAluno: (input: NovoAlunoInput) => Aluno;
   importAlunos: (list: NovoAlunoInput[]) => number;
+  inscreverPublico: (input: InscricaoPublicaInput) => InscricaoPublicaResultado;
   resetDemo: () => void;
 };
 
@@ -173,13 +193,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       instrutorId: input.instrutorId,
       instrutorNome: input.instrutorNome,
       local: input.local,
+      endereco: input.endereco,
+      mapsUrl: input.mapsUrl,
       municipio: input.municipio,
       encontros: input.encontros,
       capacidade: input.capacidade,
       vagasPreenchidas: 0,
       status: input.status,
       publicadaNoPortal: true,
-      confirmacaoAutomatica: false,
+      confirmacaoAutomatica: input.confirmacaoAutomatica,
       whatsappGrupoUrl: input.whatsappGrupoUrl,
       supervisorSenar: input.supervisorSenar,
       numeroOficio: input.numeroOficio,
@@ -340,6 +362,103 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return list.length;
   }, []);
 
+  const inscreverPublico = useCallback((input: InscricaoPublicaInput): InscricaoPublicaResultado => {
+    const curso = cursos.find((c) => c.id === input.cursoId);
+    let resultado: InscricaoPublicaResultado = {
+      ok: false,
+      status: null,
+      titulo: "Não foi possível concluir",
+      mensagem: "Tente novamente em instantes.",
+    };
+
+    setState((s) => {
+      // Melhor turma publicada para o curso.
+      const turma = [...s.turmas]
+        .filter((t) => t.cursoId === input.cursoId && t.publicadaNoPortal)
+        .sort((a, b) => {
+          const rank = (t: Turma) =>
+            t.status === "confirmada" || t.status === "em_andamento" ? 0 : t.status === "mobilizacao" || t.status === "solicitada" ? 1 : 2;
+          return rank(a) - rank(b);
+        })[0];
+
+      if (!turma || !curso) {
+        resultado = { ok: false, status: null, titulo: "Sem turma aberta", mensagem: "No momento não há turma aberta para este curso. Deixe seu contato com o sindicato." };
+        return s;
+      }
+
+      const cpfDigits = input.cpf.replace(/\D/g, "");
+      let aluno = s.alunos.find((a) => a.cpf.replace(/\D/g, "") === cpfDigits && cpfDigits.length > 0);
+      let alunos = s.alunos;
+      if (!aluno) {
+        aluno = {
+          id: uid("aluno"),
+          sindicatoId: SINDICATO_ID,
+          nome: input.nome,
+          cpf: input.cpf,
+          dataNascimento: "",
+          telefone: input.telefone,
+          email: null,
+          categoria: input.categoria,
+          propriedade: { nome: "Não informado", municipio: "São José dos Campos", car: null, itr: null, atividadePrincipal: "Não informado" },
+          comprovanteAtividadeUrl: null,
+          associado: false,
+          cursosConcluidos: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        alunos = [aluno, ...s.alunos];
+      }
+
+      const bloqueio = getEnrollmentBlock(aluno, curso, s.inscricoes);
+      if (bloqueio) {
+        resultado = { ok: false, status: null, titulo: "Inscrição não permitida", mensagem: bloqueio };
+        return { ...s, alunos };
+      }
+
+      const prioridade = prioridadePorCategoria(input.categoria);
+      const autoConfirma = turma.confirmacaoAutomatica;
+      const status: InscricaoStatus = autoConfirma ? "confirmada" : "pendente";
+
+      const inscricao: Inscricao = {
+        id: uid("insc"),
+        sindicatoId: SINDICATO_ID,
+        turmaId: turma.id,
+        cursoId: turma.cursoId,
+        alunoId: aluno.id,
+        alunoNome: aluno.nome,
+        cpfSnapshot: aluno.cpf,
+        categoriaSnapshot: input.categoria,
+        prioridade,
+        status,
+        grupoLiberado: autoConfirma,
+        documentacaoOk: false,
+        dataInscricao: new Date().toISOString(),
+        presencas: [],
+        percentualFrequencia: 0,
+        aprovadoInstrutor: false,
+        aptoCertificado: false,
+        certificadoEmitido: false,
+        certificadoUrl: null,
+        certificadoCodigoValidacao: null,
+      };
+
+      resultado = autoConfirma
+        ? { ok: true, status, titulo: "Vaga confirmada!", mensagem: `Sua vaga em “${turma.cursoNome}” está confirmada. Você já pode acessar a área do aluno.` }
+        : { ok: true, status, titulo: "Pré-inscrição recebida!", mensagem: `Você entrou na fila de “${turma.cursoNome}” com prioridade ${prioridade}. O sindicato vai confirmar pelo WhatsApp.` };
+
+      return {
+        ...s,
+        alunos,
+        turmas: autoConfirma
+          ? s.turmas.map((t) => (t.id === turma.id ? { ...t, vagasPreenchidas: t.vagasPreenchidas + 1 } : t))
+          : s.turmas,
+        inscricoes: [inscricao, ...s.inscricoes],
+      };
+    });
+
+    return resultado;
+  }, []);
+
   const resetDemo = useCallback(() => {
     try {
       localStorage.removeItem(KEY);
@@ -361,6 +480,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       emitirCertificado,
       addAluno,
       importAlunos,
+      inscreverPublico,
       resetDemo,
     }),
     [
@@ -374,6 +494,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       emitirCertificado,
       addAluno,
       importAlunos,
+      inscreverPublico,
       resetDemo,
     ],
   );

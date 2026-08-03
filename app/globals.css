@@ -32,7 +32,7 @@
   --color-cream: #fbf8f1;       /* raised cards */
   --color-ink: #1a2620;         /* body text */
   --color-ink-soft: #4a5b52;    /* secondary text */
-  --color-line: #e2d9c6;        /* warm hairline on paper */
+  --color-line: #ede6d7;        /* warm, very light hairline on paper */
 
   --radius-card: 18px;
 
@@ -133,12 +133,13 @@
 .field-input {
   width: 100%;
   border-radius: 12px;
-  border: 1px solid var(--color-line);
-  background: #fff;
+  border: none;
+  background: #ffffff;
   padding: 0.8rem 0.95rem;
   color: var(--color-ink);
   font-size: 1rem;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  box-shadow: 0 1px 2px rgba(18, 40, 28, 0.06);
+  transition: box-shadow 160ms ease;
 }
 
 .field-input::placeholder {
@@ -147,8 +148,7 @@
 
 .field-input:focus {
   outline: none;
-  border-color: var(--color-leaf);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-leaf) 16%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-leaf) 22%, transparent);
 }
 
 /* ---- Buttons ---- */
@@ -193,31 +193,29 @@
 }
 
 .btn-ghost {
-  background: transparent;
+  background: color-mix(in srgb, var(--color-forest) 9%, transparent);
   color: var(--color-forest);
-  border: 1px solid color-mix(in srgb, var(--color-forest) 30%, transparent);
 }
 
 .btn-ghost:hover {
-  background: color-mix(in srgb, var(--color-forest) 8%, transparent);
+  background: color-mix(in srgb, var(--color-forest) 15%, transparent);
 }
 
 .btn-light {
-  background: var(--color-cream);
+  background: #ffffff;
   color: var(--color-forest);
-  border: 1px solid var(--color-line);
+  box-shadow: var(--shadow-soft);
 }
 
 .btn-light:hover {
-  background: #fff;
-  border-color: var(--color-mist);
+  background: var(--color-cream);
 }
 
-/* ---- Card ---- */
+/* ---- Card (borderless, separated by soft shadow) ---- */
 .card {
   background: var(--color-cream);
-  border: 1px solid var(--color-line);
   border-radius: var(--radius-card);
+  box-shadow: 0 1px 2px rgba(18, 40, 28, 0.05), 0 10px 24px -20px rgba(18, 40, 28, 0.25);
 }
 
 .card-soft {

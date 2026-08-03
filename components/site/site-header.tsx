@@ -81,7 +81,7 @@ export function SiteHeader() {
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="grid size-11 place-items-center rounded-xl border border-line bg-cream text-forest lg:hidden"
+            className="grid size-11 place-items-center rounded-xl bg-cream text-forest shadow-[var(--shadow-soft)] lg:hidden"
             aria-label="Abrir menu"
           >
             <Menu className="size-5" />
@@ -103,7 +103,7 @@ export function SiteHeader() {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="grid size-10 place-items-center rounded-xl border border-line bg-cream text-forest"
+                className="grid size-10 place-items-center rounded-xl bg-cream text-forest shadow-[var(--shadow-soft)]"
                 aria-label="Fechar menu"
               >
                 <X className="size-5" />

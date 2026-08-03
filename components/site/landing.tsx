@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useState } from "react";
 import {
   ArrowRight,
-  ArrowUpRight,
   BadgeCheck,
   CalendarDays,
   CheckCircle2,
@@ -33,6 +32,7 @@ import {
   vagasRestantes,
 } from "@/lib/catalog";
 import { cursos, inscricoes } from "@/lib/seed";
+import { useStore, type InscricaoPublicaResultado } from "@/lib/store";
 import { contato, depoimentos, eixos, faq, numeros, passos } from "@/lib/site-content";
 import { categoriaLabels, type CategoriaAluno } from "@/lib/types";
 
@@ -47,9 +47,10 @@ type FormState = { nome: string; cpf: string; telefone: string; categoria: Categ
 const initialForm: FormState = { nome: "", cpf: "", telefone: "", categoria: "produtor" };
 
 export function Landing() {
+  const { inscreverPublico } = useStore();
   const [selectedCourseId, setSelectedCourseId] = useState(cursos[0].id);
   const [form, setForm] = useState<FormState>(initialForm);
-  const [submitted, setSubmitted] = useState(false);
+  const [result, setResult] = useState<InscricaoPublicaResultado | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   const selectedCourse = cursos.find((c) => c.id === selectedCourseId) ?? cursos[0];
@@ -58,13 +59,26 @@ export function Landing() {
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((c) => ({ ...c, [key]: value }));
-    setSubmitted(false);
+    setResult(null);
   }
 
   function selectCourse(id: string) {
     setSelectedCourseId(id);
-    setSubmitted(false);
+    setResult(null);
     document.getElementById("inscricao")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setResult(
+      inscreverPublico({
+        nome: form.nome,
+        cpf: form.cpf,
+        telefone: form.telefone,
+        categoria: form.categoria,
+        cursoId: selectedCourse.id,
+      }),
+    );
   }
 
   return (
@@ -88,7 +102,7 @@ export function Landing() {
         <div className="relative mx-auto grid min-h-[620px] max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-8">
           <div className="max-w-2xl">
             <span
-              className="reveal chip bg-white/10 text-cream ring-1 ring-white/20 backdrop-blur"
+              className="reveal chip bg-white/12 text-cream backdrop-blur"
               style={{ animationDelay: "40ms" }}
             >
               <Sparkles className="size-3.5 text-harvest" aria-hidden />
@@ -118,11 +132,10 @@ export function Landing() {
             >
               <Link href="#cursos" className="btn btn-gold text-base">
                 Ver cursos abertos
-                <ArrowRight className="size-4" aria-hidden />
               </Link>
               <Link
                 href="/entrar?perfil=aluno"
-                className="btn text-base text-white ring-1 ring-white/30 backdrop-blur hover:bg-white/10"
+                className="btn text-base text-white bg-white/12 backdrop-blur hover:bg-white/20"
               >
                 <UserRound className="size-4" aria-hidden />
                 Entrar como aluno
@@ -282,11 +295,10 @@ export function Landing() {
                     className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition ${
                       selected
                         ? "bg-forest text-cream"
-                        : "border border-mist text-forest hover:bg-paper-2"
+                        : "bg-forest/8 text-forest hover:bg-forest/15"
                     }`}
                   >
                     {selected ? "Selecionado" : emMobilizacao ? "Tenho interesse" : "Quero me inscrever"}
-                    <ArrowRight className="size-4" aria-hidden />
                   </button>
                 </div>
               </article>
@@ -311,7 +323,7 @@ export function Landing() {
               return (
                 <li key={passo.numero} className="relative">
                   <div className="flex items-center gap-3">
-                    <span className="grid size-12 place-items-center rounded-2xl bg-white/10 text-harvest ring-1 ring-white/15">
+                    <span className="grid size-12 place-items-center rounded-2xl bg-white/12 text-harvest">
                       <Icon className="size-5" aria-hidden />
                     </span>
                     <span className="font-display text-3xl font-semibold text-white/25">
@@ -404,7 +416,7 @@ export function Landing() {
                       : "Turma em mobilização"}
                   </p>
                 </div>
-                <span className="chip shrink-0 self-start bg-cream text-forest ring-1 ring-mist">
+                <span className="chip shrink-0 self-start bg-cream text-forest shadow-[var(--shadow-soft)]">
                   Prioridade {prioridadePorCategoria(form.categoria)}
                 </span>
               </div>
@@ -422,13 +434,7 @@ export function Landing() {
             </div>
           </div>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              setSubmitted(true);
-            }}
-            className="card card-soft h-fit p-6"
-          >
+          <form onSubmit={handleSubmit} className="card card-soft h-fit p-6">
             <div className="flex items-center gap-3 border-b border-line pb-4">
               <span className="grid size-12 place-items-center rounded-xl bg-forest/10 text-forest">
                 <ClipboardCheck className="size-6" aria-hidden />
@@ -486,14 +492,24 @@ export function Landing() {
 
             <button type="submit" className="btn btn-primary mt-6 w-full text-base">
               Enviar pré-inscrição
-              <ArrowRight className="size-4" aria-hidden />
             </button>
 
-            {submitted ? (
-              <div className="mt-4 flex items-start gap-2 rounded-xl border border-leaf/40 bg-leaf/10 p-4 text-sm font-semibold text-forest">
-                <CheckCircle2 className="mt-0.5 size-5 shrink-0" aria-hidden />
-                Solicitação recebida! O sindicato entrará em contato pelo WhatsApp para confirmar
-                sua vaga.
+            {result ? (
+              <div
+                className={`mt-4 rounded-xl p-4 text-sm ${
+                  result.ok ? "bg-leaf/12 text-forest" : "bg-harvest/15 text-harvest-deep"
+                }`}
+              >
+                <p className="flex items-start gap-2 font-bold">
+                  {result.ok ? <CheckCircle2 className="mt-0.5 size-5 shrink-0" aria-hidden /> : null}
+                  {result.titulo}
+                </p>
+                <p className="mt-1">{result.mensagem}</p>
+                {result.ok ? (
+                  <Link href="/entrar?perfil=aluno" className="mt-2 inline-block font-semibold underline">
+                    Acessar a área do aluno
+                  </Link>
+                ) : null}
               </div>
             ) : (
               <p className="mt-4 text-center text-xs text-ink-soft">
@@ -510,7 +526,7 @@ export function Landing() {
       {/* ============ FAQ ============ */}
       <section id="duvidas" className="mx-auto max-w-4xl scroll-mt-24 px-4 py-20 sm:px-6 lg:px-8">
         <SectionHead kicker="Dúvidas frequentes" title="O que você precisa saber" center />
-        <div className="mt-10 divide-y divide-line overflow-hidden rounded-[var(--radius-card)] border border-line bg-cream">
+        <div className="mt-10 divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-cream shadow-[var(--shadow-soft)]">
           {faq.map((item, i) => {
             const isOpen = openFaq === i;
             return (
@@ -562,14 +578,12 @@ export function Landing() {
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link href="#cursos" className="btn btn-gold text-base">
               Ver cursos abertos
-              <ArrowRight className="size-4" aria-hidden />
             </Link>
             <Link
               href="/entrar?perfil=sindicato"
-              className="btn text-base text-white ring-1 ring-white/30 hover:bg-white/10"
+              className="btn text-base text-white bg-white/12 hover:bg-white/20"
             >
               Sou do sindicato
-              <ArrowUpRight className="size-4" aria-hidden />
             </Link>
           </div>
         </div>

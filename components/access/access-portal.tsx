@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   ArrowLeft,
-  ArrowRight,
   BadgeCheck,
   Building2,
   ClipboardList,
@@ -135,7 +134,7 @@ export function AccessPortal({ initialPerfil }: { initialPerfil: Perfil }) {
               {d.features.map((f) => (
                 <li
                   key={f.title}
-                  className="rounded-2xl border border-white/12 bg-white/5 p-4 backdrop-blur"
+                  className="rounded-2xl bg-white/8 p-4 backdrop-blur"
                 >
                   <f.icon className="size-5 text-harvest" aria-hidden />
                   <p className="mt-2.5 font-semibold text-white">{f.title}</p>
@@ -233,7 +232,7 @@ export function AccessPortal({ initialPerfil }: { initialPerfil: Perfil }) {
               </button>
               {perfil === "aluno" ? (
                 <Link href="/#inscricao" className="flex items-center gap-1 text-ink-soft hover:text-forest">
-                  Criar cadastro <ArrowRight className="size-3.5" aria-hidden />
+                  Criar cadastro
                 </Link>
               ) : (
                 <a href={`mailto:${contato.email}`} className="text-ink-soft hover:text-forest">
