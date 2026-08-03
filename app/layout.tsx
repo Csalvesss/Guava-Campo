@@ -28,7 +28,7 @@ export const metadata: Metadata = {
         url: "/og.svg",
         width: 1200,
         height: 630,
-        alt: "Guava Campo para cursos SENAR",
+        alt: "Cursos SENAR do Sindicato Rural de São José dos Campos",
       },
     ],
   },
