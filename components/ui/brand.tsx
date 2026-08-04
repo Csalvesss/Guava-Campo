@@ -24,6 +24,7 @@ export function Brand({
           alt=""
           width={56}
           height={56}
+          unoptimized
           className="h-full w-full object-contain"
         />
       </span>

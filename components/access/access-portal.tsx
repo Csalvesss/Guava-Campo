@@ -18,6 +18,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Brand } from "@/components/ui/brand";
+import { formatBirthDate, formatCpf } from "@/lib/input-masks";
+import { PRIVACY_POLICY_VERSION } from "@/lib/privacy";
 import { contato } from "@/lib/site-content";
 import { saveStudentSession } from "@/lib/student-session";
 
@@ -94,6 +96,7 @@ export function AccessPortal({
   const [perfil, setPerfil] = useState<Perfil>(initialPerfil);
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const d = detalhes[perfil];
 
@@ -101,6 +104,7 @@ export function AccessPortal({
     setPerfil(next);
     setUser("");
     setPass("");
+    setPrivacyAccepted(false);
   }
 
   function fillDemo() {
@@ -113,7 +117,12 @@ export function AccessPortal({
     setLoading(true);
     // Protótipo: autenticação real via Firebase Auth entra aqui.
     if (perfil === "aluno") {
-      saveStudentSession({ cpf: user, dataNascimento: pass });
+      saveStudentSession({
+        cpf: user,
+        dataNascimento: pass,
+        privacyAcceptedAt: new Date().toISOString(),
+        privacyPolicyVersion: PRIVACY_POLICY_VERSION,
+      });
     }
 
     const destino =
@@ -215,7 +224,12 @@ export function AccessPortal({
                   placeholder={d.userPlaceholder}
                   type={d.userType}
                   value={user}
-                  onChange={(e) => setUser(e.target.value)}
+                  onChange={(e) => setUser(perfil === "aluno" ? formatCpf(e.target.value) : e.target.value)}
+                  inputMode={perfil === "aluno" ? "numeric" : undefined}
+                  maxLength={perfil === "aluno" ? 14 : undefined}
+                  pattern={perfil === "aluno" ? "\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}" : undefined}
+                  title={perfil === "aluno" ? "Digite o CPF no formato 000.000.000-00" : undefined}
+                  autoComplete={perfil === "aluno" ? "off" : "username"}
                   required
                 />
               </label>
@@ -229,12 +243,44 @@ export function AccessPortal({
                   placeholder={d.passPlaceholder}
                   type={d.passType}
                   value={pass}
-                  onChange={(e) => setPass(e.target.value)}
+                  onChange={(e) => setPass(perfil === "aluno" ? formatBirthDate(e.target.value) : e.target.value)}
+                  inputMode={perfil === "aluno" ? "numeric" : undefined}
+                  maxLength={perfil === "aluno" ? 10 : undefined}
+                  pattern={perfil === "aluno" ? "\\d{2}/\\d{2}/\\d{4}" : undefined}
+                  title={perfil === "aluno" ? "Digite a data no formato DD/MM/AAAA" : undefined}
+                  autoComplete={perfil === "aluno" ? "bday" : "current-password"}
                   required
                 />
               </label>
 
-              <button type="submit" className="btn btn-primary mt-2 w-full text-base" disabled={loading}>
+              {perfil === "aluno" ? (
+                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-line bg-cream p-4 text-sm leading-relaxed text-ink-soft">
+                  <input
+                    type="checkbox"
+                    checked={privacyAccepted}
+                    onChange={(event) => setPrivacyAccepted(event.target.checked)}
+                    className="mt-1 size-4 shrink-0 accent-forest"
+                    required
+                  />
+                  <span>
+                    Li e estou ciente da{" "}
+                    <Link href="/politica-de-privacidade" className="font-semibold text-forest underline underline-offset-2">
+                      Política de Privacidade
+                    </Link>{" "}
+                    e da{" "}
+                    <Link href="/politica-de-cookies" className="font-semibold text-forest underline underline-offset-2">
+                      Política de Cookies
+                    </Link>
+                    .
+                  </span>
+                </label>
+              ) : null}
+
+              <button
+                type="submit"
+                className="btn btn-primary mt-2 w-full text-base disabled:cursor-not-allowed disabled:opacity-55"
+                disabled={loading || (perfil === "aluno" && !privacyAccepted)}
+              >
                 <LockKeyhole className="size-5" aria-hidden />
                 {loading ? "Entrando…" : d.botao}
               </button>
