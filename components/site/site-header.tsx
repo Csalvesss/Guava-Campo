@@ -73,7 +73,7 @@ export function SiteHeader() {
               <Building2 className="size-4" aria-hidden />
               Sindicato
             </Link>
-            <Link href="/#cursos" className="btn btn-primary !px-5 !py-2 text-sm">
+            <Link href="/entrar?perfil=aluno" className="btn btn-primary !px-5 !py-1.5 text-sm">
               Inscreva-se
             </Link>
           </div>
@@ -141,7 +141,7 @@ export function SiteHeader() {
                 Área do sindicato
               </Link>
               <Link
-                href="/#cursos"
+                href="/entrar?perfil=aluno"
                 onClick={() => setOpen(false)}
                 className="btn btn-primary w-full"
               >

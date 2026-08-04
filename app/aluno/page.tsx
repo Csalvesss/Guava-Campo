@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AlunoDashboard } from "@/components/aluno/aluno-dashboard";
+import { AlunoArea } from "@/components/aluno/aluno-area";
 import { StoreProvider } from "@/lib/store";
 
 export const metadata: Metadata = {
@@ -7,10 +7,15 @@ export const metadata: Metadata = {
   description: "Acompanhe suas inscrições, turmas e certificados dos cursos SENAR.",
 };
 
-export default function AlunoPage() {
+export default async function AlunoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ curso?: string }>;
+}) {
+  const { curso } = await searchParams;
   return (
     <StoreProvider>
-      <AlunoDashboard />
+      <AlunoArea courseId={curso} />
     </StoreProvider>
   );
 }

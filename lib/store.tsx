@@ -22,7 +22,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { getEnrollmentBlock, prioridadePorCategoria } from "./business-rules";
+import { getEnrollmentBlock, prioridadePorCategoria, turmaTemVaga } from "./business-rules";
+import { turmaOfCourseFrom } from "./catalog";
 import {
   alunos as alunosSeed,
   cursos,
@@ -86,6 +87,15 @@ export type InscricaoPublicaResultado = {
   mensagem: string;
 };
 
+export type InscricaoAlunoInput = {
+  alunoId: string;
+  cursoId: string;
+};
+
+export type InscricaoAlunoResultado = InscricaoPublicaResultado & {
+  inscricaoId: string | null;
+};
+
 export type NovoAlunoInput = {
   nome: string;
   cpf: string;
@@ -109,6 +119,7 @@ type StoreValue = PersistedState & {
   ) => void;
   addAluno: (input: NovoAlunoInput) => Aluno;
   importAlunos: (list: NovoAlunoInput[]) => number;
+  inscreverAluno: (input: InscricaoAlunoInput) => InscricaoAlunoResultado;
   inscreverPublico: (input: InscricaoPublicaInput) => InscricaoPublicaResultado;
   resetDemo: () => void;
 };
@@ -148,13 +159,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // Hydrate from localStorage on mount.
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) setState(JSON.parse(raw) as PersistedState);
-    } catch {
-      /* ignore corrupt storage */
-    }
-    setHydrated(true);
+    let cancelled = false;
+
+    queueMicrotask(() => {
+      if (cancelled) return;
+      try {
+        const raw = localStorage.getItem(KEY);
+        if (raw) setState(JSON.parse(raw) as PersistedState);
+      } catch {
+        /* ignore corrupt storage */
+      }
+      setHydrated(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Persist on change (after hydration).
@@ -362,6 +382,124 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return list.length;
   }, []);
 
+  const inscreverAluno = useCallback((input: InscricaoAlunoInput): InscricaoAlunoResultado => {
+    const curso = cursos.find((c) => c.id === input.cursoId);
+    let resultado: InscricaoAlunoResultado = {
+      ok: false,
+      status: null,
+      titulo: "Não foi possível concluir",
+      mensagem: "Tente novamente em instantes.",
+      inscricaoId: null,
+    };
+
+    setState((s) => {
+      const aluno = s.alunos.find((a) => a.id === input.alunoId);
+      const turma = turmaOfCourseFrom(s.turmas, input.cursoId);
+
+      if (!aluno || !curso) {
+        resultado = {
+          ok: false,
+          status: null,
+          titulo: "Cadastro não encontrado",
+          mensagem: "Entre novamente na área do aluno ou atualize seu cadastro.",
+          inscricaoId: null,
+        };
+        return s;
+      }
+
+      if (!turma) {
+        resultado = {
+          ok: false,
+          status: null,
+          titulo: "Sem turma aberta",
+          mensagem: "No momento não há turma publicada para este curso.",
+          inscricaoId: null,
+        };
+        return s;
+      }
+
+      const bloqueio = getEnrollmentBlock(aluno, curso, turma, s.inscricoes, s.turmas);
+      if (bloqueio) {
+        resultado = {
+          ok: false,
+          status: null,
+          titulo: "Inscrição não permitida",
+          mensagem: bloqueio,
+          inscricaoId: null,
+        };
+        return s;
+      }
+
+      const temVaga = turmaTemVaga(turma, s.inscricoes);
+      const status: InscricaoStatus = !temVaga
+        ? "lista_espera"
+        : turma.confirmacaoAutomatica
+          ? "confirmada"
+          : "pendente";
+
+      const inscricao: Inscricao = {
+        id: uid("insc"),
+        sindicatoId: SINDICATO_ID,
+        turmaId: turma.id,
+        cursoId: turma.cursoId,
+        alunoId: aluno.id,
+        alunoNome: aluno.nome,
+        cpfSnapshot: aluno.cpf,
+        categoriaSnapshot: aluno.categoria,
+        prioridade: prioridadePorCategoria(aluno.categoria),
+        status,
+        grupoLiberado: status === "confirmada",
+        documentacaoOk: false,
+        dataInscricao: new Date().toISOString(),
+        presencas: [],
+        percentualFrequencia: 0,
+        aprovadoInstrutor: false,
+        aptoCertificado: false,
+        certificadoEmitido: false,
+        certificadoUrl: null,
+        certificadoCodigoValidacao: null,
+      };
+
+      resultado =
+        status === "confirmada"
+          ? {
+              ok: true,
+              status,
+              titulo: "Vaga confirmada!",
+              mensagem: `Sua vaga em "${turma.cursoNome}" está confirmada. Acompanhe datas, local e grupo em Minhas inscrições.`,
+              inscricaoId: inscricao.id,
+            }
+          : status === "lista_espera"
+            ? {
+                ok: true,
+                status,
+                titulo: "Você entrou na lista de espera",
+                mensagem: `A turma "${turma.cursoNome}" está cheia. Sua solicitação ficou registrada na lista de espera.`,
+                inscricaoId: inscricao.id,
+              }
+            : {
+                ok: true,
+                status,
+                titulo: "Inscrição recebida!",
+                mensagem: `Sua solicitação para "${turma.cursoNome}" foi enviada ao sindicato para confirmação.`,
+                inscricaoId: inscricao.id,
+              };
+
+      return {
+        ...s,
+        turmas:
+          status === "confirmada"
+            ? s.turmas.map((t) =>
+                t.id === turma.id ? { ...t, vagasPreenchidas: t.vagasPreenchidas + 1 } : t,
+              )
+            : s.turmas,
+        inscricoes: [inscricao, ...s.inscricoes],
+      };
+    });
+
+    return resultado;
+  }, []);
+
   const inscreverPublico = useCallback((input: InscricaoPublicaInput): InscricaoPublicaResultado => {
     const curso = cursos.find((c) => c.id === input.cursoId);
     let resultado: InscricaoPublicaResultado = {
@@ -409,7 +547,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         alunos = [aluno, ...s.alunos];
       }
 
-      const bloqueio = getEnrollmentBlock(aluno, curso, s.inscricoes);
+      const bloqueio = getEnrollmentBlock(aluno, curso, turma, s.inscricoes, s.turmas);
       if (bloqueio) {
         resultado = { ok: false, status: null, titulo: "Inscrição não permitida", mensagem: bloqueio };
         return { ...s, alunos };
@@ -480,6 +618,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       emitirCertificado,
       addAluno,
       importAlunos,
+      inscreverAluno,
       inscreverPublico,
       resetDemo,
     }),
@@ -494,6 +633,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       emitirCertificado,
       addAluno,
       importAlunos,
+      inscreverAluno,
       inscreverPublico,
       resetDemo,
     ],

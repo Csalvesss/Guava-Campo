@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 export default async function EntrarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ perfil?: string }>;
+  searchParams: Promise<{ perfil?: string; curso?: string }>;
 }) {
-  const { perfil } = await searchParams;
+  const { perfil, curso } = await searchParams;
   const initialPerfil = perfil === "sindicato" ? "sindicato" : "aluno";
-  return <AccessPortal initialPerfil={initialPerfil} />;
+  return <AccessPortal initialPerfil={initialPerfil} courseId={curso} />;
 }

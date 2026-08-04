@@ -157,12 +157,15 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 999px;
+  min-height: 2.75rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
   font-weight: 700;
   font-size: 0.95rem;
   line-height: 1;
   padding: 0.85rem 1.4rem;
-  transition: transform 140ms ease, background-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+  letter-spacing: 0;
+  transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -170,7 +173,6 @@
 .btn:active {
   transform: translateY(1px);
 }
-
 .btn-primary {
   background: var(--color-forest);
   color: #fbf8f1;

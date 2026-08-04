@@ -13,28 +13,24 @@ import {
   ClipboardCheck,
   MapPin,
   MessageCircle,
-  Phone,
   Quote,
   Search,
-  Sparkles,
   UserRound,
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
 import { EixoIcon } from "@/components/ui/eixo-icon";
-import { prioridadePorCategoria, turmaTemVaga } from "@/lib/business-rules";
+import { turmaTemVaga } from "@/lib/business-rules";
 import {
   cursoTipoCurto,
   formatShortDate,
-  formatFullDate,
   periodoTurma,
-  turmaOfCourse,
+  turmaOfCourseFrom,
   vagasRestantes,
 } from "@/lib/catalog";
-import { cursos, inscricoes } from "@/lib/seed";
-import { useStore, type InscricaoPublicaResultado } from "@/lib/store";
-import { contato, depoimentos, eixos, faq, numeros, passos } from "@/lib/site-content";
-import { categoriaLabels, type CategoriaAluno } from "@/lib/types";
+import { cursos } from "@/lib/seed";
+import { useStore } from "@/lib/store";
+import { depoimentos, eixos, faq, numeros, passos } from "@/lib/site-content";
 
 const passoIcons: Record<string, LucideIcon> = {
   search: Search,
@@ -43,87 +39,57 @@ const passoIcons: Record<string, LucideIcon> = {
   badge: BadgeCheck,
 };
 
-type FormState = { nome: string; cpf: string; telefone: string; categoria: CategoriaAluno };
-const initialForm: FormState = { nome: "", cpf: "", telefone: "", categoria: "produtor" };
-
 export function Landing() {
-  const { inscreverPublico } = useStore();
-  const [selectedCourseId, setSelectedCourseId] = useState(cursos[0].id);
-  const [form, setForm] = useState<FormState>(initialForm);
-  const [result, setResult] = useState<InscricaoPublicaResultado | null>(null);
+  const { turmas, inscricoes } = useStore();
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const selectedCourse = cursos.find((c) => c.id === selectedCourseId) ?? cursos[0];
-  const selectedTurma = turmaOfCourse(selectedCourse.id);
+  const selectedCourse = cursos[0];
+  const selectedTurma = turmaOfCourseFrom(turmas, selectedCourse.id);
   const hasSeat = selectedTurma ? turmaTemVaga(selectedTurma, inscricoes) : true;
-
-  function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
-    setForm((c) => ({ ...c, [key]: value }));
-    setResult(null);
-  }
-
-  function selectCourse(id: string) {
-    setSelectedCourseId(id);
-    setResult(null);
-    document.getElementById("inscricao")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setResult(
-      inscreverPublico({
-        nome: form.nome,
-        cpf: form.cpf,
-        telefone: form.telefone,
-        categoria: form.categoria,
-        cursoId: selectedCourse.id,
-      }),
-    );
-  }
-
+  const courseLoginHref = (courseId: string) =>
+    `/entrar?perfil=aluno&curso=${encodeURIComponent(courseId)}`;
   return (
     <>
       {/* ============ HERO ============ */}
-      <section className="relative overflow-hidden bg-pine text-cream">
+      <section className="relative overflow-hidden bg-paper text-ink">
         <div className="absolute inset-0">
           <Image
             src="/hero-cursos-senar.png"
             alt="Capacitação rural em campo"
             fill
             priority
-            className="object-cover"
+            className="object-cover object-[68%_center]"
             sizes="100vw"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-pine via-pine/90 to-pine/30" />
-          <div className="absolute inset-0 bg-gradient-to-t from-pine via-transparent to-pine/40" />
+          <div className="absolute inset-0 bg-gradient-to-r from-paper via-paper/90 to-paper/10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-paper/85 via-transparent to-paper/20" />
           <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-paper to-transparent" />
         </div>
 
         <div className="relative mx-auto grid min-h-[620px] max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-8">
           <div className="max-w-2xl">
             <span
-              className="reveal chip bg-white/12 text-cream backdrop-blur"
+              className="reveal chip bg-cream/90 text-forest shadow-[var(--shadow-soft)]"
               style={{ animationDelay: "40ms" }}
             >
-              <Sparkles className="size-3.5 text-harvest" aria-hidden />
               Cursos presenciais e gratuitos do SENAR-SP
             </span>
 
             <h1
-              className="reveal mt-6 font-display text-[2.7rem] font-semibold leading-[1.02] text-white sm:text-6xl lg:text-[4.1rem]"
+              className="reveal mt-6 font-display text-[2.7rem] font-semibold leading-[1.02] text-pine sm:text-6xl lg:text-[4.1rem]"
               style={{ animationDelay: "120ms" }}
             >
               Capacitação que nasce{" "}
-              <span className="italic text-harvest">no campo</span> de São José dos Campos.
+              <span className="text-forest">no campo</span> de São José dos Campos.
             </h1>
 
             <p
-              className="reveal mt-6 max-w-xl text-lg leading-relaxed text-cream/85"
+              className="reveal mt-6 max-w-xl text-lg leading-relaxed text-ink-soft"
               style={{ animationDelay: "220ms" }}
             >
               O Sindicato Rural mobiliza as turmas do SENAR para o produtor, o trabalhador rural
-              e a família do campo. Escolha o curso, faça a pré-inscrição pelo celular e receba a
-              confirmação da sua vaga.
+              e a família do campo. Escolha o curso, entre com seu CPF e solicite a vaga dentro
+              da área do aluno.
             </p>
 
             <div
@@ -135,7 +101,7 @@ export function Landing() {
               </Link>
               <Link
                 href="/entrar?perfil=aluno"
-                className="btn text-base text-white bg-white/12 backdrop-blur hover:bg-white/20"
+                className="btn btn-light text-base"
               >
                 <UserRound className="size-4" aria-hidden />
                 Entrar como aluno
@@ -143,17 +109,17 @@ export function Landing() {
             </div>
 
             <div
-              className="reveal mt-10 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm text-cream/75"
+              className="reveal mt-10 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm text-ink-soft"
               style={{ animationDelay: "420ms" }}
             >
               <span className="flex items-center gap-2">
-                <CheckCircle2 className="size-4 text-harvest" aria-hidden /> 100% gratuito
+                <CheckCircle2 className="size-4 text-forest" aria-hidden /> 100% gratuito
               </span>
               <span className="flex items-center gap-2">
-                <CheckCircle2 className="size-4 text-harvest" aria-hidden /> Certificado SENAR
+                <CheckCircle2 className="size-4 text-forest" aria-hidden /> Certificado SENAR
               </span>
               <span className="flex items-center gap-2">
-                <CheckCircle2 className="size-4 text-harvest" aria-hidden /> Presencial no Vale do Paraíba
+                <CheckCircle2 className="size-4 text-forest" aria-hidden /> Presencial no Vale do Paraíba
               </span>
             </div>
           </div>
@@ -200,8 +166,8 @@ export function Landing() {
               </p>
             )}
 
-            <Link href="#inscricao" className="btn btn-primary mt-5 w-full">
-              Fazer pré-inscrição
+            <Link href={courseLoginHref(selectedCourse.id)} className="btn btn-primary mt-5 w-full">
+              Fazer inscrição
             </Link>
           </aside>
         </div>
@@ -230,8 +196,8 @@ export function Landing() {
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {cursos.map((curso, index) => {
-            const turma = turmaOfCourse(curso.id);
-            const selected = selectedCourseId === curso.id;
+            const turma = turmaOfCourseFrom(turmas, curso.id);
+            const selected = selectedCourse.id === curso.id;
             const vagas = turma ? vagasRestantes(turma) : null;
             const emMobilizacao = !turma || turma.status === "mobilizacao";
 
@@ -289,17 +255,12 @@ export function Landing() {
                     {turma ? turma.local : "Local a definir"}
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => selectCourse(curso.id)}
-                    className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition ${
-                      selected
-                        ? "bg-forest text-cream"
-                        : "bg-forest/8 text-forest hover:bg-forest/15"
-                    }`}
+                  <Link
+                    href={courseLoginHref(curso.id)}
+                    className="btn btn-primary mt-5 w-full !py-2.5 text-sm"
                   >
-                    {selected ? "Selecionado" : emMobilizacao ? "Tenho interesse" : "Quero me inscrever"}
-                  </button>
+                    {emMobilizacao ? "Tenho interesse" : "Quero me inscrever"}
+                  </Link>
                 </div>
               </article>
             );
@@ -390,139 +351,39 @@ export function Landing() {
         </div>
       </section>
 
-      {/* ============ PRÉ-INSCRIÇÃO ============ */}
+      {/* ============ INSCRIÇÃO PROTEGIDA ============ */}
       <section id="inscricao" className="scroll-mt-24 border-y border-line bg-cream">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[1fr_460px] lg:px-8">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[1fr_420px] lg:px-8">
           <div>
-            <span className="eyebrow">Pré-inscrição</span>
-            <h2 className="mt-3 max-w-xl font-display text-4xl font-semibold text-pine sm:text-5xl">
-              Garanta sua vaga com o sindicato
+            <span className="eyebrow">Inscrição protegida</span>
+            <h2 className="mt-3 max-w-2xl font-display text-4xl font-semibold text-pine sm:text-5xl">
+              Sua inscrição acontece dentro da área do aluno
             </h2>
-            <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-soft">
-              Preencha seus dados e a equipe de mobilização confirma sua participação. A ordem segue
-              a prioridade do público SENAR e a data da solicitação.
+            <p className="mt-4 max-w-2xl text-base leading-relaxed text-ink-soft">
+              Entre com seu CPF, confira as turmas disponíveis e solicite a vaga com seus dados já preenchidos.
             </p>
-
-            <div className="mt-8 card border-forest/15 bg-forest/5 p-5">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <span className="eyebrow no-rule text-moss">Curso selecionado</span>
-                  <h3 className="mt-1 font-display text-2xl font-semibold text-pine">
-                    {selectedCourse.nome}
-                  </h3>
-                  <p className="mt-1 text-sm text-ink-soft">
-                    {selectedTurma
-                      ? `${selectedTurma.local} · ${periodoTurma(selectedTurma)}`
-                      : "Turma em mobilização"}
-                  </p>
-                </div>
-                <span className="chip shrink-0 self-start bg-cream text-forest shadow-[var(--shadow-soft)]">
-                  Prioridade {prioridadePorCategoria(form.categoria)}
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-start gap-3 rounded-xl bg-paper-2 p-4 text-sm text-ink-soft">
-              <Phone className="mt-0.5 size-4 shrink-0 text-forest" aria-hidden />
-              <span>
-                Prefere falar com a equipe? Ligue para {contato.telefone} ou escreva para{" "}
-                <a href={`mailto:${contato.email}`} className="font-semibold text-forest underline">
-                  {contato.email}
-                </a>
-                .
-              </span>
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <RuleItem icon={UserRound} title="Histórico por CPF" text="Cursos concluídos ficam registrados e não podem ser refeitos." />
+              <RuleItem icon={CalendarDays} title="Agenda sem conflito" text="O portal bloqueia turmas com aulas no mesmo dia." />
+              <RuleItem icon={BadgeCheck} title="Acompanhamento" text="Status, grupo e certificado ficam no painel do aluno." />
+              <RuleItem icon={CheckCircle2} title="Dados reaproveitados" text="Você não precisa preencher o cadastro a cada curso." />
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="card card-soft h-fit p-6">
-            <div className="flex items-center gap-3 border-b border-line pb-4">
-              <span className="grid size-12 place-items-center rounded-xl bg-forest/10 text-forest">
-                <ClipboardCheck className="size-6" aria-hidden />
-              </span>
-              <div>
-                <h3 className="font-display text-xl font-semibold text-pine">Solicitar inscrição</h3>
-                <p className="text-sm text-ink-soft">Resposta após análise do sindicato.</p>
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-4">
-              <FormField label="Nome completo">
-                <input
-                  required
-                  value={form.nome}
-                  onChange={(e) => updateField("nome", e.target.value)}
-                  placeholder="Ex.: Maria Aparecida Souza"
-                  className="field-input"
-                />
-              </FormField>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField label="CPF">
-                  <input
-                    required
-                    value={form.cpf}
-                    onChange={(e) => updateField("cpf", e.target.value)}
-                    placeholder="000.000.000-00"
-                    className="field-input"
-                  />
-                </FormField>
-                <FormField label="WhatsApp">
-                  <input
-                    required
-                    value={form.telefone}
-                    onChange={(e) => updateField("telefone", e.target.value)}
-                    placeholder="(12) 99999-9999"
-                    className="field-input"
-                  />
-                </FormField>
-              </div>
-              <FormField label="Você é">
-                <select
-                  value={form.categoria}
-                  onChange={(e) => updateField("categoria", e.target.value as CategoriaAluno)}
-                  className="field-input"
-                >
-                  {Object.entries(categoriaLabels).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
-            </div>
-
-            <button type="submit" className="btn btn-primary mt-6 w-full text-base">
-              Enviar pré-inscrição
-            </button>
-
-            {result ? (
-              <div
-                className={`mt-4 rounded-xl p-4 text-sm ${
-                  result.ok ? "bg-leaf/12 text-forest" : "bg-harvest/15 text-harvest-deep"
-                }`}
-              >
-                <p className="flex items-start gap-2 font-bold">
-                  {result.ok ? <CheckCircle2 className="mt-0.5 size-5 shrink-0" aria-hidden /> : null}
-                  {result.titulo}
-                </p>
-                <p className="mt-1">{result.mensagem}</p>
-                {result.ok ? (
-                  <Link href="/entrar?perfil=aluno" className="mt-2 inline-block font-semibold underline">
-                    Acessar a área do aluno
-                  </Link>
-                ) : null}
-              </div>
-            ) : (
-              <p className="mt-4 text-center text-xs text-ink-soft">
-                Já tem cadastro?{" "}
-                <Link href="/entrar?perfil=aluno" className="font-semibold text-forest underline">
-                  Acesse a área do aluno
-                </Link>
-              </p>
-            )}
-          </form>
+          <aside className="h-fit rounded-lg bg-forest p-6 text-cream shadow-[var(--shadow-soft)]">
+            <span className="grid size-12 place-items-center rounded-lg border border-white/15 bg-white/10 text-harvest">
+              <UserRound className="size-5" aria-hidden />
+            </span>
+            <h3 className="mt-5 font-display text-3xl font-semibold text-white">Entre, escolha e acompanhe</h3>
+            <p className="mt-3 text-sm leading-relaxed text-cream/75">
+              O curso escolhido segue com você após o login. Se for seu primeiro acesso, o cadastro é concluído dentro da área do aluno.
+            </p>
+            <Link href="/entrar?perfil=aluno" className="btn btn-gold mt-6 w-full">
+              Entrar na área do aluno
+            </Link>
+          </aside>
         </div>
       </section>
-
       {/* ============ FAQ ============ */}
       <section id="duvidas" className="mx-auto max-w-4xl scroll-mt-24 px-4 py-20 sm:px-6 lg:px-8">
         <SectionHead kicker="Dúvidas frequentes" title="O que você precisa saber" center />
@@ -643,11 +504,22 @@ function SectionHead({
   );
 }
 
-function FormField({ label, children }: { label: string; children: React.ReactNode }) {
+function RuleItem({
+  icon: Icon,
+  title,
+  text,
+}: {
+  icon: LucideIcon;
+  title: string;
+  text: string;
+}) {
   return (
-    <label className="block">
-      <span className="text-sm font-semibold text-pine">{label}</span>
-      <div className="mt-1.5">{children}</div>
-    </label>
+    <div className="flex items-start gap-3 border-l-2 border-harvest pl-4">
+      <Icon className="mt-0.5 size-5 shrink-0 text-forest" aria-hidden />
+      <div>
+        <h3 className="font-display text-lg font-semibold text-pine">{title}</h3>
+        <p className="mt-1 text-sm leading-relaxed text-ink-soft">{text}</p>
+      </div>
+    </div>
   );
 }
