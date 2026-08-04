@@ -80,7 +80,7 @@ export const cursos: Curso[] = [
     eixo: "Agricultura",
     cargaHoraria: 16,
     descricao:
-      "Curso concluído no histórico da aluna demonstração, usado para exibir a trava de curso único por CPF.",
+      "Uso responsável de defensivos, escolha de EPI, regulagem de equipamentos e segurança durante a aplicação.",
     objetivos: [
       "Selecionar EPI adequado",
       "Regular equipamentos de aplicação",

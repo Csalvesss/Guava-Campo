@@ -1,7 +1,7 @@
 /**
  * Static institutional + marketing content for the public site.
  * Grounded in public information about SENAR-SP / FAESP and the
- * Sindicato Rural de São José dos Campos (Vale do Paraíba).
+ * Sindicato Rural de São José dos Campos.
  * Contact details marked "editável" should be confirmed by the sindicato.
  */
 
@@ -9,8 +9,8 @@ export const contato = {
   nome: "Sindicato Rural de São José dos Campos",
   curto: "Sindicato Rural de S.J. dos Campos",
   sistema: "Sistema FAESP · SENAR-SP · CAESP",
-  regiao: "Vale do Paraíba · São Paulo",
-  municipio: "São José dos Campos — SP",
+  regiao: "São José dos Campos e Caçapava · SP",
+  municipio: "São José dos Campos e Caçapava — SP",
   presidente: "Renato Veneziani",
   email: "sindicatoruralsjc@gmail.com",
   telefone: "(12) 3922-0000", // editável
@@ -44,14 +44,6 @@ export const eixos: {
   { icon: "bee", nome: "Apicultura", descricao: "Produção de mel e renda para a família rural." },
   { icon: "shield", nome: "Segurança do Trabalho", descricao: "NR-31 e operação segura no campo." },
   { icon: "chart", nome: "Gestão e Empreendedorismo", descricao: "Custos, planejamento e o Empresário Rural." },
-];
-
-/** Números institucionais (sistema FAESP/SENAR-SP). */
-export const numeros: { valor: string; rotulo: string; detalhe: string }[] = [
-  { valor: "645", rotulo: "municípios de SP", detalhe: "atendidos pelo Sistema FAESP/SENAR-SP" },
-  { valor: "237", rotulo: "sindicatos rurais", detalhe: "filiados em todo o estado" },
-  { valor: "100%", rotulo: "gratuito", detalhe: "para o produtor e o trabalhador rural" },
-  { valor: "24h", rotulo: "pré-inscrição online", detalhe: "sem sair da propriedade" },
 ];
 
 /** Passo a passo do aluno. */
@@ -163,7 +155,7 @@ export const faq: { pergunta: string; resposta: string }[] = [
   {
     pergunta: "Onde acontecem as aulas?",
     resposta:
-      "Na sede do Sindicato Rural, em propriedades parceiras e em bairros rurais de São José dos Campos e região do Vale do Paraíba, sempre de forma presencial.",
+      "Na sede do Sindicato Rural, em propriedades parceiras e em bairros rurais de São José dos Campos e Caçapava, sempre de forma presencial.",
   },
   {
     pergunta: "Posso fazer o mesmo curso de novo?",

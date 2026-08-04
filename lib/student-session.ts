@@ -4,6 +4,8 @@ export type StudentSession = {
   cpf: string;
   dataNascimento: string;
   signedAt: string;
+  privacyAcceptedAt?: string;
+  privacyPolicyVersion?: string;
 };
 
 export function saveStudentSession(session: Omit<StudentSession, "signedAt">) {

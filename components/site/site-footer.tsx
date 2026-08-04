@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
+import { CookieSettingsButton } from "@/components/privacy/cookie-settings-button";
 import { Brand } from "@/components/ui/brand";
 import { contato } from "@/lib/site-content";
 
@@ -67,8 +68,13 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-3 border-t border-white/12 pt-6 text-xs text-cream/55 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-12 flex flex-col gap-4 border-t border-white/12 pt-6 text-xs text-cream/55 lg:flex-row lg:items-center lg:justify-between">
           <p>© {new Date().getFullYear()} {contato.nome}. Cursos gratuitos SENAR-SP.</p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <Link href="/politica-de-privacidade" className="hover:text-harvest">Política de Privacidade</Link>
+            <Link href="/politica-de-cookies" className="hover:text-harvest">Política de Cookies</Link>
+            <CookieSettingsButton />
+          </div>
           <p>Presidente {contato.presidente} · {contato.sistema}</p>
         </div>
       </div>

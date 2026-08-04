@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Hanken_Grotesk } from "next/font/google";
+import { CookieConsent } from "@/components/privacy/cookie-consent";
 import "./globals.css";
 
 const display = Fraunces({
@@ -24,29 +25,29 @@ export const metadata: Metadata = {
     template: "%s · Sindicato Rural de São José dos Campos",
   },
   description:
-    "Portal de cursos gratuitos SENAR-SP mobilizados pelo Sindicato Rural de São José dos Campos. Pré-inscrição online, área do aluno e gestão completa para o sindicato rural.",
+    "Portal de cursos gratuitos SENAR-SP em São José dos Campos e Caçapava. Pré-inscrição online e acompanhamento pela área do aluno.",
   keywords: [
     "SENAR-SP",
     "Sindicato Rural",
     "São José dos Campos",
+    "Caçapava",
     "cursos rurais gratuitos",
     "Formação Profissional Rural",
-    "Vale do Paraíba",
   ],
   openGraph: {
     type: "website",
     locale: "pt_BR",
     url: siteUrl,
     siteName: "Sindicato Rural de São José dos Campos",
-    title: "Cursos SENAR-SP em São José dos Campos",
+    title: "Cursos SENAR-SP em São José dos Campos e Caçapava",
     description:
-      "Capacitação gratuita para o produtor rural e sua família. Pré-inscrição online mobilizada pelo Sindicato Rural de São José dos Campos.",
+      "Capacitação gratuita para o produtor rural e sua família em São José dos Campos e Caçapava.",
     images: [{ url: "/og.png", width: 1200, height: 630, alt: "Cursos SENAR do Sindicato Rural de São José dos Campos" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Cursos SENAR-SP em São José dos Campos",
-    description: "Pré-inscrição online para cursos gratuitos mobilizados pelo Sindicato Rural de São José dos Campos.",
+    title: "Cursos SENAR-SP em São José dos Campos e Caçapava",
+    description: "Pré-inscrição online para cursos gratuitos do SENAR-SP em São José dos Campos e Caçapava.",
     images: ["/og.png"],
   },
   icons: {
@@ -62,7 +63,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className={`${display.variable} ${sans.variable}`}>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        <CookieConsent />
+      </body>
     </html>
   );
 }

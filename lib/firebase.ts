@@ -1,4 +1,9 @@
-import { getAnalytics, isSupported } from "firebase/analytics";
+import {
+  getAnalytics,
+  isSupported,
+  setAnalyticsCollectionEnabled,
+  setConsent,
+} from "firebase/analytics";
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -21,10 +26,19 @@ export const db = getFirestore(firebaseApp);
 export const storage = getStorage(firebaseApp);
 export const functions = getFunctions(firebaseApp, "southamerica-east1");
 
-export async function loadAnalytics() {
+export async function setAnalyticsEnabled(enabled: boolean) {
   if (typeof window === "undefined") {
     return null;
   }
 
-  return (await isSupported()) ? getAnalytics(firebaseApp) : null;
+  if (!(await isSupported())) return null;
+
+  const analytics = getAnalytics(firebaseApp);
+  setConsent({ analytics_storage: enabled ? "granted" : "denied" });
+  setAnalyticsCollectionEnabled(analytics, enabled);
+  return analytics;
+}
+
+export async function loadAnalytics() {
+  return setAnalyticsEnabled(true);
 }

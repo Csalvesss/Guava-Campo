@@ -30,7 +30,7 @@ import {
 } from "@/lib/catalog";
 import { cursos } from "@/lib/seed";
 import { useStore } from "@/lib/store";
-import { depoimentos, eixos, faq, numeros, passos } from "@/lib/site-content";
+import { depoimentos, eixos, faq, passos } from "@/lib/site-content";
 
 const passoIcons: Record<string, LucideIcon> = {
   search: Search,
@@ -68,28 +68,21 @@ export function Landing() {
 
         <div className="relative mx-auto grid min-h-[620px] max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-8">
           <div className="max-w-2xl">
-            <span
-              className="reveal chip bg-cream/90 text-forest shadow-[var(--shadow-soft)]"
-              style={{ animationDelay: "40ms" }}
-            >
-              Cursos presenciais e gratuitos do SENAR-SP
-            </span>
-
             <h1
-              className="reveal mt-6 font-display text-[2.7rem] font-semibold leading-[1.02] text-pine sm:text-6xl lg:text-[4.1rem]"
-              style={{ animationDelay: "120ms" }}
+              className="reveal font-display text-[2.7rem] font-semibold leading-[1.02] text-pine sm:text-6xl lg:text-[4.1rem]"
+              style={{ animationDelay: "80ms" }}
             >
               Capacitação que nasce{" "}
-              <span className="text-forest">no campo</span> de São José dos Campos.
+              <span className="text-forest">no campo</span> de São José dos Campos e Caçapava.
             </h1>
 
             <p
               className="reveal mt-6 max-w-xl text-lg leading-relaxed text-ink-soft"
               style={{ animationDelay: "220ms" }}
             >
-              O Sindicato Rural mobiliza as turmas do SENAR para o produtor, o trabalhador rural
-              e a família do campo. Escolha o curso, entre com seu CPF e solicite a vaga dentro
-              da área do aluno.
+              O Sindicato Rural mobiliza os cursos oferecidos pelo SENAR SP para o produtor, o
+              trabalhador rural e a família do campo. Escolha o curso, entre com seu CPF e
+              solicite a vaga dentro da área do aluno.
             </p>
 
             <div
@@ -119,7 +112,7 @@ export function Landing() {
                 <CheckCircle2 className="size-4 text-forest" aria-hidden /> Certificado SENAR
               </span>
               <span className="flex items-center gap-2">
-                <CheckCircle2 className="size-4 text-forest" aria-hidden /> Presencial no Vale do Paraíba
+                <MapPin className="size-4 text-forest" aria-hidden /> São José dos Campos e Caçapava
               </span>
             </div>
           </div>
@@ -170,19 +163,6 @@ export function Landing() {
               Fazer inscrição
             </Link>
           </aside>
-        </div>
-      </section>
-
-      {/* ============ NÚMEROS ============ */}
-      <section className="border-b border-line bg-paper-2">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-8 px-4 py-10 sm:px-6 lg:grid-cols-4 lg:px-8">
-          {numeros.map((n) => (
-            <div key={n.rotulo} className="border-l-2 border-harvest pl-4">
-              <p className="font-display text-4xl font-semibold text-forest lg:text-5xl">{n.valor}</p>
-              <p className="mt-1 text-sm font-bold text-pine">{n.rotulo}</p>
-              <p className="text-xs leading-snug text-ink-soft">{n.detalhe}</p>
-            </div>
-          ))}
         </div>
       </section>
 
@@ -310,7 +290,7 @@ export function Landing() {
         <SectionHead
           kicker="Áreas de capacitação"
           title="Do pomar ao pasto, uma trilha para cada atividade"
-          text="O SENAR-SP oferece cursos em dezenas de cadeias produtivas. Estes são os eixos mais mobilizados no Vale do Paraíba."
+          text="O SENAR-SP oferece cursos em dezenas de cadeias produtivas. Estes são os eixos mais mobilizados em São José dos Campos e Caçapava."
         />
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -351,22 +331,22 @@ export function Landing() {
         </div>
       </section>
 
-      {/* ============ INSCRIÇÃO PROTEGIDA ============ */}
+      {/* ============ BENEFÍCIOS PARA O ALUNO ============ */}
       <section id="inscricao" className="scroll-mt-24 border-y border-line bg-cream">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[1fr_420px] lg:px-8">
           <div>
-            <span className="eyebrow">Inscrição protegida</span>
+            <span className="eyebrow">Feito para quem vive o campo</span>
             <h2 className="mt-3 max-w-2xl font-display text-4xl font-semibold text-pine sm:text-5xl">
-              Sua inscrição acontece dentro da área do aluno
+              Conhecimento que acompanha você da inscrição ao certificado
             </h2>
             <p className="mt-4 max-w-2xl text-base leading-relaxed text-ink-soft">
-              Entre com seu CPF, confira as turmas disponíveis e solicite a vaga com seus dados já preenchidos.
+              Encontre uma turma perto de você, aprenda com quem entende do campo e acompanhe tudo pela área do aluno.
             </p>
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <RuleItem icon={UserRound} title="Histórico por CPF" text="Cursos concluídos ficam registrados e não podem ser refeitos." />
-              <RuleItem icon={CalendarDays} title="Agenda sem conflito" text="O portal bloqueia turmas com aulas no mesmo dia." />
-              <RuleItem icon={BadgeCheck} title="Acompanhamento" text="Status, grupo e certificado ficam no painel do aluno." />
-              <RuleItem icon={CheckCircle2} title="Dados reaproveitados" text="Você não precisa preencher o cadastro a cada curso." />
+              <RuleItem icon={CheckCircle2} title="Cursos 100% gratuitos" text="Capacitação de qualidade sem custo para o participante." />
+              <RuleItem icon={BadgeCheck} title="Certificado SENAR-SP" text="Valorize seu currículo e comprove novos conhecimentos." />
+              <RuleItem icon={MapPin} title="Aulas perto de você" text="Turmas em São José dos Campos e Caçapava." />
+              <RuleItem icon={ClipboardCheck} title="Aprendizado para usar no campo" text="Conteúdo prático para aplicar no trabalho e na propriedade." />
             </div>
           </div>
 
