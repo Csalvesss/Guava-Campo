@@ -64,8 +64,8 @@ export const passos: { numero: string; titulo: string; texto: string; icon: stri
   },
   {
     numero: "02",
-    titulo: "Faça a pré-inscrição",
-    texto: "Envie seus dados em minutos. A fila é organizada por prioridade do público SENAR e ordem de chegada.",
+    titulo: "Entre na área do aluno",
+    texto: "Acesse com seu CPF, confira o histórico e solicite a vaga usando os dados do seu cadastro.",
     icon: "clipboard",
   },
   {
@@ -168,6 +168,6 @@ export const faq: { pergunta: string; resposta: string }[] = [
   {
     pergunta: "Posso fazer o mesmo curso de novo?",
     resposta:
-      "Cada CPF realiza um curso uma única vez. Concluído o curso, ele fica registrado no seu histórico e você pode partir para uma nova capacitação.",
+      "Cada CPF realiza um curso uma única vez. O portal também bloqueia inscrições em turmas que tenham aula no mesmo dia de outra inscrição ativa.",
   },
 ];

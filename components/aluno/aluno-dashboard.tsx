@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useState } from "react";
 import {
   Award,
@@ -23,14 +22,13 @@ import {
   UserRound,
 } from "lucide-react";
 import { DashboardShell, type NavItem } from "@/components/app/dashboard-shell";
+import { CourseEnrollment } from "@/components/aluno/course-enrollment";
 import { InscricaoBadge, Panel, Progress, StatTile, TurmaBadge } from "@/components/app/ui";
 import {
   cursoTipoCurto,
   formatFullDate,
   formatShortDate,
   periodoTurma,
-  turmaOfCourse,
-  vagasRestantes,
 } from "@/lib/catalog";
 import { downloadBlob, downloadDataUrl, gerarCertificadoHTML } from "@/lib/exports";
 import { cursos } from "@/lib/seed";
@@ -38,13 +36,13 @@ import { useStore, type Certificado } from "@/lib/store";
 import { categoriaLabels } from "@/lib/types";
 import type { Aluno, Curso, Inscricao, Turma } from "@/lib/types";
 
-const REF_DATE = new Date("2026-08-03T00:00:00-03:00").getTime();
+const REF_DATE = new Date("2026-08-04T00:00:00-03:00").getTime();
 
-export function AlunoDashboard() {
+export function AlunoDashboard({ alunoId, courseId }: { alunoId: string; courseId?: string }) {
   const store = useStore();
-  const [active, setActive] = useState("painel");
+  const [active, setActive] = useState(courseId ? "cursos" : "painel");
 
-  const aluno = store.alunos.find((a) => a.id === "aluno-marina") ?? store.alunos[0];
+  const aluno = store.alunos.find((a) => a.id === alunoId) ?? store.alunos[0];
   const minhasInscricoes = store.inscricoes.filter((i) => i.alunoId === aluno.id);
   const meusCertificados = store.certificados.filter((c) => c.alunoId === aluno.id);
   const concluidos = cursos.filter((c) => aluno.cursosConcluidos.includes(c.id));
@@ -94,15 +92,14 @@ export function AlunoDashboard() {
       title={meta.title}
       subtitle={meta.subtitle}
       actions={
-        <Link href="/#inscricao" className="btn btn-primary !px-4 !py-2 text-sm">
+        <button type="button" onClick={() => setActive("cursos")} className="btn btn-primary !px-4 !py-2 text-sm">
           <Sprout className="size-4" aria-hidden />
           <span className="hidden sm:inline">Nova inscrição</span>
-        </Link>
+        </button>
       }
     >
       {active === "painel" ? (
         <Painel
-          aluno={aluno}
           minhasInscricoes={minhasInscricoes}
           turmas={store.turmas}
           disponiveis={disponiveis}
@@ -114,7 +111,7 @@ export function AlunoDashboard() {
       ) : null}
       {active === "inscricoes" ? <Inscricoes minhasInscricoes={minhasInscricoes} turmas={store.turmas} onNavigate={setActive} /> : null}
       {active === "certificados" ? <Certificados certificados={meusCertificados} concluidos={concluidos} aluno={aluno} /> : null}
-      {active === "cursos" ? <Cursos disponiveis={disponiveis} /> : null}
+      {active === "cursos" ? <CourseEnrollment aluno={aluno} requestedCourseId={courseId} /> : null}
       {active === "dados" ? <Dados aluno={aluno} /> : null}
     </DashboardShell>
   );
@@ -122,7 +119,6 @@ export function AlunoDashboard() {
 
 /* ---------------- Painel ---------------- */
 function Painel({
-  aluno,
   minhasInscricoes,
   turmas,
   disponiveis,
@@ -131,7 +127,6 @@ function Painel({
   proximo,
   onNavigate,
 }: {
-  aluno: Aluno;
   minhasInscricoes: Inscricao[];
   turmas: Turma[];
   disponiveis: Curso[];
@@ -357,36 +352,6 @@ function CertCard({ nome, carga, codigo, emitido, anexo, onDownload }: { nome: s
         </div>
         <button type="button" onClick={onDownload} className="btn btn-primary mt-5 w-full !py-2.5 text-sm"><Download className="size-4" aria-hidden /> {anexo ? "Baixar certificado" : "Baixar certificado (PDF)"}</button>
       </div>
-    </div>
-  );
-}
-
-/* ---------------- Cursos ---------------- */
-function Cursos({ disponiveis }: { disponiveis: Curso[] }) {
-  if (disponiveis.length === 0) {
-    return <Panel><p className="text-sm text-ink-soft">Você já está inscrito ou concluiu todos os cursos disponíveis no momento.</p></Panel>;
-  }
-  return (
-    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-      {disponiveis.map((curso) => {
-        const turma = turmaOfCourse(curso.id);
-        return (
-          <div key={curso.id} className="card card-soft flex flex-col p-5">
-            <div className="flex items-center justify-between">
-              <span className="chip bg-forest/8 text-forest">{cursoTipoCurto[curso.tipo]}</span>
-              {turma ? <TurmaBadge status={turma.status} /> : null}
-            </div>
-            <h3 className="mt-3 font-display text-lg font-semibold text-pine">{curso.nome}</h3>
-            <p className="mt-1.5 flex-1 text-sm leading-relaxed text-ink-soft">{curso.descricao}</p>
-            <div className="mt-4 flex items-center gap-4 text-xs text-ink-soft">
-              <span className="flex items-center gap-1"><Clock className="size-3.5 text-moss" aria-hidden /> {curso.cargaHoraria}h</span>
-              {turma ? <span className="flex items-center gap-1"><CalendarDays className="size-3.5 text-moss" aria-hidden /> {formatShortDate(turma.encontros[0].data)}</span> : null}
-              {turma ? <span className="flex items-center gap-1"><UserRound className="size-3.5 text-moss" aria-hidden /> {vagasRestantes(turma)} vagas</span> : null}
-            </div>
-            <Link href="/#inscricao" className="btn btn-light mt-5 w-full !py-2 text-sm">Fazer pré-inscrição</Link>
-          </div>
-        );
-      })}
     </div>
   );
 }

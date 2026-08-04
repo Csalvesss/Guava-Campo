@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
-  ArrowLeft,
   BadgeCheck,
   Building2,
   ClipboardList,
@@ -20,6 +19,7 @@ import {
 } from "lucide-react";
 import { Brand } from "@/components/ui/brand";
 import { contato } from "@/lib/site-content";
+import { saveStudentSession } from "@/lib/student-session";
 
 type Perfil = "aluno" | "sindicato";
 
@@ -83,7 +83,13 @@ const detalhes: Record<
   },
 };
 
-export function AccessPortal({ initialPerfil }: { initialPerfil: Perfil }) {
+export function AccessPortal({
+  initialPerfil,
+  courseId,
+}: {
+  initialPerfil: Perfil;
+  courseId?: string;
+}) {
   const router = useRouter();
   const [perfil, setPerfil] = useState<Perfil>(initialPerfil);
   const [user, setUser] = useState("");
@@ -106,7 +112,16 @@ export function AccessPortal({ initialPerfil }: { initialPerfil: Perfil }) {
     e.preventDefault();
     setLoading(true);
     // Protótipo: autenticação real via Firebase Auth entra aqui.
-    setTimeout(() => router.push(d.destino), 500);
+    if (perfil === "aluno") {
+      saveStudentSession({ cpf: user, dataNascimento: pass });
+    }
+
+    const destino =
+      perfil === "aluno" && courseId
+        ? `${d.destino}?curso=${encodeURIComponent(courseId)}`
+        : d.destino;
+
+    setTimeout(() => router.push(destino), 500);
   }
 
   return (
@@ -154,7 +169,6 @@ export function AccessPortal({ initialPerfil }: { initialPerfil: Perfil }) {
       <div className="relative flex flex-col bg-paper">
         <div className="flex items-center justify-between px-6 py-5 sm:px-10">
           <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-ink-soft hover:text-forest">
-            <ArrowLeft className="size-4" aria-hidden />
             Voltar ao site
           </Link>
           <div className="lg:hidden">
@@ -231,9 +245,9 @@ export function AccessPortal({ initialPerfil }: { initialPerfil: Perfil }) {
                 Usar acesso de demonstração
               </button>
               {perfil === "aluno" ? (
-                <Link href="/#inscricao" className="flex items-center gap-1 text-ink-soft hover:text-forest">
-                  Criar cadastro
-                </Link>
+                <span className="text-ink-soft">
+                  Primeiro acesso? Entre com seu CPF
+                </span>
               ) : (
                 <a href={`mailto:${contato.email}`} className="text-ink-soft hover:text-forest">
                   Preciso de acesso

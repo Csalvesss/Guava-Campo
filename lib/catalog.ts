@@ -13,16 +13,23 @@ export const cursoTipoCurto: Record<CursoTipo, string> = {
   Tecnico: "Técnico",
 };
 
-export function turmaOfCourse(courseId: string): Turma | undefined {
-  const publicadas = turmas.filter((t) => t.cursoId === courseId && t.publicadaNoPortal);
-  // prefer confirmed/ongoing turmas, then the soonest
+export function turmaOfCourseFrom(turmasList: Turma[], courseId: string): Turma | undefined {
+  const publicadas = turmasList.filter((t) => t.cursoId === courseId && t.publicadaNoPortal);
   const ordered = [...publicadas].sort((a, b) => {
     const rank = (t: Turma) =>
-      t.status === "confirmada" || t.status === "em_andamento" ? 0 : t.status === "solicitada" ? 1 : 2;
+      t.status === "confirmada" || t.status === "em_andamento"
+        ? 0
+        : t.status === "solicitada"
+          ? 1
+          : 2;
     if (rank(a) !== rank(b)) return rank(a) - rank(b);
     return new Date(a.encontros[0].data).getTime() - new Date(b.encontros[0].data).getTime();
   });
   return ordered[0];
+}
+
+export function turmaOfCourse(courseId: string): Turma | undefined {
+  return turmaOfCourseFrom(turmas, courseId);
 }
 
 export function vagasRestantes(turma: Turma): number {
@@ -59,5 +66,5 @@ export function periodoTurma(turma: Turma): string {
   const primeiro = turma.encontros[0].data;
   const ultimo = turma.encontros[turma.encontros.length - 1].data;
   if (primeiro === ultimo) return formatFullDate(primeiro);
-  return `${formatShortDate(primeiro)} – ${formatShortDate(ultimo)}`;
+  return `${formatShortDate(primeiro)} - ${formatShortDate(ultimo)}`;
 }
